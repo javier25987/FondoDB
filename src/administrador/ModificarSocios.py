@@ -1,5 +1,5 @@
-import funciones.modificarsocios as fm
-import funciones.general as fg
+import src.funciones.modificarsocios as fm
+import src.funciones.general as fg
 import streamlit as st
 import pandas as pd
 

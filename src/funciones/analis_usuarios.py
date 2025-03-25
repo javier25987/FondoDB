@@ -1,4 +1,4 @@
-import funciones.cuotas as fc
+import src.funciones.cuotas as fc
 import datetime
 
 

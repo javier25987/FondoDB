@@ -1,12 +1,12 @@
-import funciones.general as fg
-import funciones.cuotas as fc
+import src.funciones.general as fg
+import src.funciones.cuotas as fc
 from tqdm import tqdm
 import pandas as pd
 import datetime
 
 
 def abrir_fecha() -> dict:
-    with open("asuntos/fecha.txt", "r") as f:
+    with open("src/asuntos/fecha.txt", "r") as f:
         fecha: str = f.read()
         f.close()
 
@@ -18,7 +18,7 @@ def abrir_fecha() -> dict:
 
 
 def cargar_ultimo_lunes() -> None:
-    with open("asuntos/fecha.txt", "w") as f:
+    with open("src/asuntos/fecha.txt", "w") as f:
         f.write(obtener_ultimo_lunes().strftime("%Y/%m/%d"))
         f.close()
 

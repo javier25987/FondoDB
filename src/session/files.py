@@ -1,4 +1,4 @@
-import funciones.general as fg
+import src.funciones.general as fg
 import streamlit as st
 
 st.header("Creacion de archivos elementales")

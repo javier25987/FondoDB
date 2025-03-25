@@ -1,5 +1,5 @@
-import funciones.general as fg
-import funciones.rifas as fr
+import src.funciones.general as fg
+import src.funciones.rifas as fr
 import streamlit as st
 import pandas as pd
 

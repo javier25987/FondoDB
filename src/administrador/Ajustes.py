@@ -1,5 +1,5 @@
-import funciones.ajustes as fa
-import funciones.general as fg
+import src.funciones.ajustes as fa
+import src.funciones.general as fg
 import streamlit as st
 import pandas as pd
 import os

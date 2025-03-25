@@ -1,4 +1,4 @@
-from funciones.general import abrir_ajustes
+from src.funciones.general import abrir_ajustes
 import streamlit as st
 import time
 

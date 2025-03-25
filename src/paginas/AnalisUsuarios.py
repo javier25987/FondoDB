@@ -1,6 +1,6 @@
-import funciones.analis_usuarios as fa
-import funciones.general as fg
-import funciones.cuotas as fc
+import src.funciones.analis_usuarios as fa
+import src.funciones.general as fg
+import src.funciones.cuotas as fc
 import streamlit as st
 import pandas as pd
 import datetime

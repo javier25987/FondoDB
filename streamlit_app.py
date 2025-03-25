@@ -1,5 +1,5 @@
 # importamos las bibliotecas
-import asuntos.rectificado as a_r
+import src.asuntos.rectificado as a_r
 import streamlit as st
 import pandas as pd
 import json
@@ -51,34 +51,34 @@ if "buscar_banco" not in st.session_state:
 
 # paginas de usuario general
 paginas_generales: list = [
-    st.Page("paginas/Menu.py", title="Menu", icon="🏠"),
-    st.Page("paginas/Cuotas.py", title="Cuotas", icon="📆"),
-    st.Page("paginas/Prestamos.py", title="Prestamos", icon="💵"),
-    st.Page("paginas/AnalisUsuarios.py", title="Analizar Ususarios", icon="📈"),
-    st.Page("paginas/Rifas.py", title="Rifas", icon="🗒️"),
-    st.Page("paginas/Anotaciones.py", title="Anotaciones", icon="📘"),
-    st.Page("paginas/VerSocios.py", title="Ver Usuarios", icon="🔎"),
+    st.Page("src/paginas/Menu.py", title="Menu", icon="🏠"),
+    st.Page("src/paginas/Cuotas.py", title="Cuotas", icon="📆"),
+    st.Page("src/paginas/Prestamos.py", title="Prestamos", icon="💵"),
+    st.Page("src/paginas/AnalisUsuarios.py", title="Analizar Ususarios", icon="📈"),
+    st.Page("src/paginas/Rifas.py", title="Rifas", icon="🗒️"),
+    st.Page("src/paginas/Anotaciones.py", title="Anotaciones", icon="📘"),
+    st.Page("src/paginas/VerSocios.py", title="Ver Usuarios", icon="🔎"),
 ]
 
 # paginas de el modo administardor
 paginas_de_adiministrador: list = [
     st.Page(
-        "administrador/ModificarSocios.py",
+        "src/administrador/ModificarSocios.py",
         title="Modificar Usuarios",
         icon="📖"
     ),
-    st.Page("administrador/Ajustes.py", title="Ajustes", icon="⚙️"),
-    st.Page("session/logout.py", title="Salir", icon=":material/logout:"),
+    st.Page("src/administrador/Ajustes.py", title="Ajustes", icon="⚙️"),
+    st.Page("src/session/logout.py", title="Salir", icon=":material/logout:"),
 ]
 
 # pagina para ingresar como administrador
 ingresar_admin: list = [
-    st.Page("session/login.py", title="Ingresar", icon=":material/login:")
+    st.Page("src/session/login.py", title="Ingresar", icon=":material/login:")
 ]
 
 # pagina para crear los archivos
 archivos_elementales: list = [
-    st.Page("session/files.py", title="Crear Archivos", icon=":material/settings:")
+    st.Page("src/session/files.py", title="Crear Archivos", icon=":material/settings:")
 ]
 
 # revisar si existen los ajustes

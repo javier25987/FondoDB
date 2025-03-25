@@ -1,5 +1,5 @@
-import funciones.prestamos as fp
-import funciones.general as fg
+import src.funciones.prestamos as fp
+import src.funciones.general as fg
 import streamlit as st
 import pandas as pd
 import os

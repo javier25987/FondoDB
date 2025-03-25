@@ -1,5 +1,5 @@
-import funciones.general as fg
-import funciones.cuotas as fc
+import src.funciones.general as fg
+import src.funciones.cuotas as fc
 import streamlit as st
 import pandas as pd
 import os

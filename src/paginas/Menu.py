@@ -1,5 +1,5 @@
-import funciones.general as fg
-import funciones.menu as fm
+import src.funciones.general as fg
+import src.funciones.menu as fm
 import streamlit as st
 
 ajustes: dict = fg.abrir_ajustes()
