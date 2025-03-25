@@ -2,8 +2,6 @@ import src.funciones.general as fg
 import src.funciones.menu as fm
 import streamlit as st
 
-ajustes: dict = fg.abrir_ajustes()
-
 st.title("Menu de inicio")
 
 st.markdown(
@@ -23,9 +21,13 @@ with col1:
     st.header("Guardar tabla")
     st.divider()
     if st.button("📤 Guardar En GitHub"):
-        fm.hacer_commit(ajustes)
+        fm.hacer_commit()
 
-    st.link_button("🔗 Abrir GitHub", ajustes["enlace repo"])
+    st.link_button(
+        "🔗 Abrir GitHub", fg.obtener_ajuste(
+            "enlace repo", False
+        )
+    )
 
 with col2:
     st.header("Cargar multas")

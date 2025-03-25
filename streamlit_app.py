@@ -1,13 +1,11 @@
 # importamos las bibliotecas
 import src.asuntos.rectificado as a_r
 import streamlit as st
-import pandas as pd
-import json
 
 # miramos si hay que rectificar
-if "todo_rectificado" not in st.session_state:
-    st.session_state.todo_rectificado = 1
-    a_r.rectificar_todo()
+# if "todo_rectificado" not in st.session_state:
+#     st.session_state.todo_rectificado = 1
+#     a_r.rectificar_todo()
 
 # configuracion de el tamanio de la pagina
 st.set_page_config(layout="wide")
@@ -16,17 +14,8 @@ st.set_page_config(layout="wide")
 if "admin" not in st.session_state:
     st.session_state.admin = False
 
-if "df_exist" not in st.session_state:
-    st.session_state.df_exist = False
-
-if "ajustes_exist" not in st.session_state:
-    st.session_state.ajustes_exist = False
-
-if "banco_exist" not in st.session_state:
-    st.session_state.banco_exist = False
-
-if "nombre_para_busqueda" not in st.session_state:
-    st.session_state.nombre_para_busqueda = ""
+if "db_exist" not in st.session_state:
+    st.session_state.db_exist = False
 
 if "usuario_actual_cuotas" not in st.session_state:
     st.session_state.usuario_actual_cuotas = -1
@@ -45,9 +34,6 @@ if "usuario_actual_analis" not in st.session_state:
 
 if "ranura_actual" not in st.session_state:
     st.session_state.ranura_actual = "1"
-
-if "buscar_banco" not in st.session_state:
-    st.session_state.buscar_banco = False
 
 # paginas de usuario general
 paginas_generales: list = [
@@ -83,37 +69,13 @@ archivos_elementales: list = [
 
 # revisar si existen los ajustes
 try:
-    with open("ajustes.json", "r") as f:
+    with open("Fondo.db", "r") as f:
         f.close()
-    st.session_state.ajustes_exist = True
+    st.session_state.db_exist = True
 except FileExistsError:
     pass
 
-# revisar si existe banco
-try:
-    with open("banco.json", "r") as f:
-        f.close()
-    st.session_state.banco_exist = True
-except FileExistsError:
-    pass
-
-# revisar si esiste la tabla
-try:
-    with open("ajustes.json", "r") as f:
-        ajustes = json.load(f)
-        f.close()
-
-    df = pd.read_csv(ajustes["nombre df"])
-
-    st.session_state.df_exist = True
-except FileExistsError:
-    pass
-
-general_control: bool = (
-    st.session_state.ajustes_exist
-    and st.session_state.df_exist
-    and st.session_state.banco_exist
-)
+general_control: bool = st.session_state.db_exist
 
 # diccionario de paginas que se van a mostrar
 dict_general: dict = {}

@@ -1,3 +1,4 @@
+import src.funciones.general as fg
 import streamlit as st
 import pandas as pd
 import datetime
@@ -108,21 +109,21 @@ def pagar_n_multas(s: str, n: int):
     return "".join(s)
 
 
-def abrir_usuario(index: int, ajustes: dict, df) -> (bool, str):
-    if 0 > index >= ajustes["usuarios"]:
+def abrir_usuario(index: int) -> (bool, str):
+    if 0 > index >= fg.obtener_ajuste("usuarios"):
         return False, "El numero de usuario esta fuera de rango"
 
-    if df["estado"][index] != "activo":
+    estado_usuario: bool = bool(fg.obtener_valor(
+        "informacion_general", "estado", index
+    ))
+    if  estado_usuario:
         return False, f"El usuario № {index} no esta activo"
 
-    arreglar_asuntos(index, ajustes, df)
-
-    df = pd.read_csv(ajustes["nombre df"])
-
-    if ajustes["anular usuarios"] and (df["multas"][index].count("n") < 47):
-        df.loc[index, "estado"] = "no activo"
-        df = df.loc[:, ~df.columns.str.contains("^Unnamed")]
-        df.to_csv(st.session_state.nombre_df)
+    multas: str = fg.obtener_valor(
+        "cuotas", "multas", index
+    )
+    anular_usuarios: bool = bool(fg.obtener_ajuste("anular usuarios"))
+    if anular_usuarios and (multas.count("n") < 47):
         return False, "El usuario ha sido desactivado"
 
     return True, ""
