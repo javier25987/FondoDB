@@ -70,10 +70,15 @@ def crear_tablas_rifas(ajustes: dict, rifa: str) -> list:
 
 
 def cargar_datos_de_rifa(
-    ajustes: dict, rifa: str, numero_de_boletas: int,
-    numeros_por_boleta: int, boletas_por_talonario: int,
-    costo_de_boleta: int, costo_de_administracion: int,
-    fecha_de_cierre, premios: list[int],
+    ajustes: dict,
+    rifa: str,
+    numero_de_boletas: int,
+    numeros_por_boleta: int,
+    boletas_por_talonario: int,
+    costo_de_boleta: int,
+    costo_de_administracion: int,
+    fecha_de_cierre,
+    premios: list[int],
 ) -> None:
     suma_de_premios = sum(premios)
     ganancias_por_boleta = (numero_de_boletas * costo_de_boleta) - (

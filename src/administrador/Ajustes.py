@@ -189,9 +189,7 @@ with tab[3]:
     with col3_2[0]:
         st.markdown("### Menos de el tope:")
         st.markdown(
-            f"##### el interes actual por prestamo es: {
-                ajustes['interes < tope']
-            } %"
+            f"##### el interes actual por prestamo es: {ajustes['interes < tope']} %"
         )
     with col3_2[1]:
         nuevo_interes_m_tope: int = st.number_input(
@@ -208,9 +206,7 @@ with tab[3]:
     with col3_3[0]:
         st.markdown("### Mas de el tope:")
         st.markdown(
-            f"##### el interes actual por prestamo es: {
-                ajustes['interes > tope']
-            } %"
+            f"##### el interes actual por prestamo es: {ajustes['interes > tope']} %"
         )
     with col3_3[1]:
         nuevo_interes_M_tope: int = st.number_input(
@@ -230,7 +226,7 @@ with tab[3]:
     with col3_4[0]:
         st.markdown(
             f"##### Actual mente se puede usar un `{
-                ajustes["capital usable"]
+                ajustes['capital usable']
             }%` del capital guardado."
         )
 

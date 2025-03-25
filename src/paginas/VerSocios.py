@@ -3,14 +3,13 @@ import src.funciones.general as fg
 import streamlit as st
 import pandas as pd
 
-ajustes: dict = fg.abrir_ajustes()
-banco: dict = fg.abrir_banco()
-df = pd.read_csv(ajustes["nombre df"])
-
 tabs = st.tabs(
     [
-        "Buscar Usuarios", "Ver si necesita acuerdo", "Verificar ranura 16",
-        "Buscar boleta", "Tabla de socios"
+        "Buscar Usuarios",
+        "Ver si necesita acuerdo",
+        "Verificar ranura 16",
+        "Buscar boleta",
+        "Tabla de socios",
     ]
 )
 

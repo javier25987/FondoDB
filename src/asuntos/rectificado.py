@@ -5,14 +5,23 @@ import pandas as pd
 import datetime
 
 
+def sumar_una_multa(s: list, semana: int = 0) -> list:
+    valor_semana: str = s[semana]
+
+    if valor_semana == "n":
+        s[semana] = "1"
+    else:
+        k: str = str(int(valor_semana) + 1)
+        s[semana] = k
+    return s
+
+
 def abrir_fecha() -> dict:
     with open("src/asuntos/fecha.txt", "r") as f:
         fecha: str = f.read()
         f.close()
 
-    fecha = datetime.datetime(
-        *map(int, fecha.split("/"))
-    )
+    fecha = datetime.datetime(*map(int, fecha.split("/")))
 
     return fecha
 
@@ -27,10 +36,10 @@ def obtener_ultimo_lunes():
     hoy = datetime.datetime.now()
 
     diferencia_dias = hoy.weekday()
-    '''
+    """
     .weekday() devueleve el dia de la semana numerado como un array, ejm:
     lun _ 0 , mar _ 1, mie _ 2, ...
-    '''
+    """
 
     ultimo_lunes = hoy - datetime.timedelta(days=diferencia_dias)
 
@@ -50,7 +59,6 @@ def rectificar_todo() -> None:
 
     # rectificar si ya paso el lunes
     if (ultimo_lunes > lunes_guardado) and hoy_no_es_lunes():
-
         print("Es necesario cargar multas e intereses:")
 
         # cargamos datos
@@ -72,8 +80,9 @@ def rectificar_todo() -> None:
             map(lambda x: 1 if x < fecha_actual else 0, calendario)
         )
 
-        for index in tqdm(range(ajustes["usuarios"])): # iteramos sobre todos los usuarios
-
+        for index in tqdm(
+            range(ajustes["usuarios"])
+        ):  # iteramos sobre todos los usuarios
             # rectificamos para cuotas
             cuotas: list = list(df["cuotas"][index])
             multas: list = list(df["multas"][index])
@@ -94,9 +103,7 @@ def rectificar_todo() -> None:
                 df.loc[index, "multas"] = "".join(multas)
                 df.loc[index, "revisiones"] = semanas_a_revisar
 
-
-            for i in ranuras: # iteramos sobre prestamos hechos
-
+            for i in ranuras:  # iteramos sobre prestamos hechos
                 if df[f"p{i} estado"][index] != "activo":
                     prestamo: list[str] = df[f"p{i} prestamo"][index].split("_")
                     fechas: str = df[f"p{i} fechas de pago"][index]
@@ -133,4 +140,5 @@ def rectificar_todo() -> None:
         cargar_ultimo_lunes()
         print("Proceso finalizado.")
 
-    else: print("No fue necesario rectificar multas o intereses.")
+    else:
+        print("No fue necesario rectificar multas o intereses.")

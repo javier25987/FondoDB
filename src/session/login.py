@@ -1,8 +1,6 @@
-from src.funciones.general import abrir_ajustes
+from src.sql.conect import obtener_ajuste
 import streamlit as st
 import time
-
-ajustes: dict = abrir_ajustes()
 
 st.title("Ingresar como administrador")
 
@@ -16,7 +14,7 @@ st.markdown(
 clave: str = st.text_input("Contraseña de administrador:", type="password")
 
 if st.button("Ingresar"):
-    if clave == ajustes["clave de acceso"]:
+    if clave == obtener_ajuste("clave acceso", False):
         st.toast("Ha obtenido acceso de administador", icon="🎉")
         st.session_state.admin = True
         time.sleep(1)

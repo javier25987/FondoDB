@@ -79,8 +79,12 @@ with tab1:
                     st.error("No se puede pagar mas de lo que se debe", icon="🚨")
                 else:
                     fp.formato_de_abono(
-                        index, monto_a_pagar, tablas_ranura[4], ranura_actual,
-                        ajustes, df,
+                        index,
+                        monto_a_pagar,
+                        tablas_ranura[4],
+                        ranura_actual,
+                        ajustes,
+                        df,
                     )
         st.markdown(f"> Deuda actual: {'{:,}'.format(tablas_ranura[4])}")
 
@@ -103,9 +107,7 @@ with tab2:
         ranura_prestamo: str = st.selectbox(
             "Ranura en la que guardar el prestamo: ", [str(i) for i in range(1, 16)]
         )
-        valor_prestamo: int = st.number_input(
-            "Valor de el prestamo: ", value=0, step=1
-        )
+        valor_prestamo: int = st.number_input("Valor de el prestamo: ", value=0, step=1)
 
     with col2_2:
         numero_de_fiadores: int = st.number_input(
@@ -119,13 +121,17 @@ with tab2:
         for i in range(numero_de_fiadores):
             with col3_1:
                 st.number_input(
-                    "Numero de el fiador: ", value=0, step=1,
+                    "Numero de el fiador: ",
+                    value=0,
+                    step=1,
                     key=f"numero_fiador_{key_f}",
                 )
                 key_f += 1
             with col3_2:
                 st.number_input(
-                    "Deuda con el fiador: ", value=0, step=1,
+                    "Deuda con el fiador: ",
+                    value=0,
+                    step=1,
                     key=f"deuda_fiador_{key_d}",
                 )
                 key_d += 1
@@ -138,14 +144,24 @@ with tab2:
                 fiadores_prestamo.append(st.session_state[f"numero_fiador_{i}"])
                 deudas_prestamo.append(st.session_state[f"deuda_fiador_{i}"])
             estado_prestamo: tuple[bool, str] = fp.rectificar_viavilidad(
-                index, ranura_prestamo, valor_prestamo, ajustes, df,
-                fiadores_prestamo, deudas_prestamo,
+                index,
+                ranura_prestamo,
+                valor_prestamo,
+                ajustes,
+                df,
+                fiadores_prestamo,
+                deudas_prestamo,
             )
             if estado_prestamo[0]:
                 st.balloons()
                 fp.formulario_de_prestamo(
-                    index, ranura_prestamo, valor_prestamo, ajustes, df,
-                    fiadores_prestamo, deudas_prestamo,
+                    index,
+                    ranura_prestamo,
+                    valor_prestamo,
+                    ajustes,
+                    df,
+                    fiadores_prestamo,
+                    deudas_prestamo,
                 )
             else:
                 st.error(estado_prestamo[1], icon="🚨")

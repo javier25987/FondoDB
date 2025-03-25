@@ -37,9 +37,7 @@ with cols_1[1]:
 
 cols_2: st.columns = st.columns([0.5, 0.2, 0.3], vertical_alignment="bottom")
 with cols_2[0]:
-    monto_anotacion: int = st.number_input(
-        "Monto de la anotacion:", value=0, step=1
-    )
+    monto_anotacion: int = st.number_input("Monto de la anotacion:", value=0, step=1)
 with cols_2[1]:
     if st.button("Realizar anotacion"):
         estado_anotacion: (bool, str) = fa.realizar_anotacion(
@@ -62,9 +60,7 @@ for i in anotaciones:
     st.markdown(f"> **№ {count}:** {i}")
     count += 1
 
-st.markdown(
-    f"> ##### Total de anotaciones: {df['multas extra'][index]:,}"
-)
+st.markdown(f"> ##### Total de anotaciones: {df['multas extra'][index]:,}")
 st.divider()
 st.markdown(
     """

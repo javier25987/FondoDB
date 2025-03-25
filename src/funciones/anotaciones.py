@@ -1,6 +1,7 @@
 import streamlit as st
 import datetime
 
+
 def ingresar_usuario(index: int, ajustes: dict, df) -> (bool, str):
     if (0 > index) or (index >= ajustes["usuarios"]):
         return False, "Numero de usuario fuera de rango"
@@ -30,10 +31,12 @@ def realizar_anotacion(
         df.loc[index, "aporte a multas"] = monto_de_aporte
 
     # creacion de la anotacion
-    anotacion: str = f"{motivo} -" + \
-        f"{datetime.datetime.now().strftime('%Y/%m/%d - %H;%M')} " + \
-        anotacion + \
-        f": $ {monto}"
+    anotacion: str = (
+        f"{motivo} -"
+        + f"{datetime.datetime.now().strftime('%Y/%m/%d - %H;%M')} "
+        + anotacion
+        + f": $ {monto}"
+    )
 
     # escritura de la anotacion
     anotaciones: str = df["anotaciones generales"][index]

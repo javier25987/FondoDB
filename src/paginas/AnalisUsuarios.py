@@ -36,15 +36,21 @@ with tabs[0]:
     # esto es para las opciones generales
 
     options: list[str] = [
-        "Capital", "Pagos en multas", "Anotaciones generales",
-        "Prestamos solicitados", "Dinero adeudado en prestamos",
+        "Capital",
+        "Pagos en multas",
+        "Anotaciones generales",
+        "Prestamos solicitados",
+        "Dinero adeudado en prestamos",
         "Intereses generados",
     ]
 
     values: list[int] = [
-        df["capital"].sum(), df["aporte a multas"].sum(),
-        df["multas extra"].sum(), df["prestamos hechos"].sum(),
-        dinero_adeudado_prestamos, df["dinero por intereses vencidos"].sum(),
+        df["capital"].sum(),
+        df["aporte a multas"].sum(),
+        df["multas extra"].sum(),
+        df["prestamos hechos"].sum(),
+        dinero_adeudado_prestamos,
+        df["dinero por intereses vencidos"].sum(),
     ]
 
     informacion_general = pd.DataFrame(
@@ -82,9 +88,7 @@ with tabs[1]:
         st.stop()
 
     st.title(
-        f"№ {index} - {df['nombre'][index].title()} : {
-            df['puestos'][index]
-        } puesto(s)"
+        f"№ {index} - {df['nombre'][index].title()} : {df['puestos'][index]} puesto(s)"
     )
     st.markdown(f"> ### {datetime.datetime.now().strftime('%Y/%m/%d %H:%M')}")
 
@@ -98,19 +102,33 @@ with tabs[1]:
         deudas_de_prestamos += int(df[f"p{i} prestamo"][index].split("_")[3])
 
     usuario_options: list[str] = [
-        "Cuotas pagas", "Cuotas que se deben", "Multas pendientes",
-        "Estado", "Capital", "Dinero pagado en multas", "Multas extra",
-        "Prestamos solitados", "Dinero retirado en prestamos",
-        "Prestamos activos", "Deudas en prestamos", "Deudas por fiador",
+        "Cuotas pagas",
+        "Cuotas que se deben",
+        "Multas pendientes",
+        "Estado",
+        "Capital",
+        "Dinero pagado en multas",
+        "Multas extra",
+        "Prestamos solitados",
+        "Dinero retirado en prestamos",
+        "Prestamos activos",
+        "Deudas en prestamos",
+        "Deudas por fiador",
         "Fiador de",
     ]
     usuario_values: list[int | str] = [
-        df["cuotas"][index].count("p"), df["cuotas"][index].count("d"),
-        fc.contar_multas(df["multas"][index]), df["estado"][index],
-        df["capital"][index], df["aporte a multas"][index],
-        df["multas extra"][index], df["prestamos hechos"][index],
-        df["dinero en prestamos"][index], prestamos_activos,
-        deudas_de_prestamos, df["deudas por fiador"][index],
+        df["cuotas"][index].count("p"),
+        df["cuotas"][index].count("d"),
+        fc.contar_multas(df["multas"][index]),
+        df["estado"][index],
+        df["capital"][index],
+        df["aporte a multas"][index],
+        df["multas extra"][index],
+        df["prestamos hechos"][index],
+        df["dinero en prestamos"][index],
+        prestamos_activos,
+        deudas_de_prestamos,
+        df["deudas por fiador"][index],
         df["fiador de"][index],
     ]
 

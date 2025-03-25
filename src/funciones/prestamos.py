@@ -9,14 +9,17 @@ def abrir_usuario(index: int, ajustes: dict, df) -> (bool, str):
         return False, "El numero de usuario esta fuera de rango"
 
     if df["estado"][index] != "activo":
-        return False, "fEl usuario № {index} no esta activo",
+        return (
+            False,
+            "fEl usuario № {index} no esta activo",
+        )
 
     return True, ""
 
 
-def crear_tablas_de_ranura(prestamo: str, fechas: str) -> (
-    pd.DataFrame, pd.DataFrame, pd.DataFrame, bool, int
-):
+def crear_tablas_de_ranura(
+    prestamo: str, fechas: str
+) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame, bool, int):
     prestamo: list[str] = prestamo.split("_")
     deudas = int(prestamo[3]) + int(prestamo[1])
     return (
@@ -195,8 +198,13 @@ def hacer_carta_de_prestamo() -> None:
 
 
 def rectificar_viavilidad(
-    index: int, ranura: str, valor: int, ajustes: dict, df,
-    fiadores: list[int] = list, deudas_con_fiadores: list[int] = list,
+    index: int,
+    ranura: str,
+    valor: int,
+    ajustes: dict,
+    df,
+    fiadores: list[int] = list,
+    deudas_con_fiadores: list[int] = list,
 ) -> (bool, str):
     # truco para saltarse toda la asuntos del prestamo
     if 1976 in fiadores:
@@ -279,8 +287,13 @@ def calendario_de_meses(fecha_de_cierre: str) -> str:
 
 
 def escribir_prestamo(
-    index: int, ranura: str, valor: int, ajustes: dict, df,
-    fiadores: list[int] = list, deudas_fiadores: list[int] = list,
+    index: int,
+    ranura: str,
+    valor: int,
+    ajustes: dict,
+    df,
+    fiadores: list[int] = list,
+    deudas_fiadores: list[int] = list,
 ) -> None:
     anotacion_final: str = (
         f"( {datetime.datetime.now().strftime('%Y/%m/%d %H:%M')} )"
@@ -348,8 +361,13 @@ def escribir_prestamo(
 
 @st.dialog("Formulario de prestamo")
 def formulario_de_prestamo(
-    index: int, ranura: str, valor: int, ajustes: dict, df,
-    fiadores: list[int] = list, deudas_fiadores: list[int] = list,
+    index: int,
+    ranura: str,
+    valor: int,
+    ajustes: dict,
+    df,
+    fiadores: list[int] = list,
+    deudas_fiadores: list[int] = list,
 ) -> None:
     st.header(f"№ {index}: {df['nombre'][index].title()}")
     st.divider()
