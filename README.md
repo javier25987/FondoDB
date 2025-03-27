@@ -23,7 +23,7 @@
 * [ ]  prestamos
 * [ ]  rifas
 * [X]  registros
-* [ ]  transferencias
+* [X]  transferencias
 * [ ]  ver socios
 * [ ]  ajustes
 * [ ]  modificar socios

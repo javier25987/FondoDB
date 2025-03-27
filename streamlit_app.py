@@ -38,6 +38,9 @@ if "ranura_actual" not in st.session_state:
 if "mes_registro" not in st.session_state:
     st.session_state.mes_registro = 1
 
+if "numero_transf" not in st.session_state:
+    st.session_state.numero_transf = -1
+
 # paginas de usuario general
 paginas_generales: list = [
     st.Page("src/paginas/Menu.py", title="Menu", icon="🏠"),

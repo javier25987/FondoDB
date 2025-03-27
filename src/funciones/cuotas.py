@@ -12,33 +12,6 @@ def contar_multas(s: str) -> int:
     return sum(int(i) for i in s if i != "n")
 
 
-def descontar_n_multas(s: str, n: int):
-    s: list[int, ...] = [
-        int(i) if i != "n" else 0 for i in s
-    ]
-    i: int = 0
-
-    for value in s:
-        if n <= 0:
-            break
-
-        if value != 0:
-            if value > n:
-                value -= n
-                n = 0
-            else:
-                n -= value
-                value = 0
-
-            s[i] = value
-
-        i += 1
-
-    return "".join(
-        [str(i) if i != 0 else "n" for i in s]
-    )
-
-
 def abrir_usuario(index: int) -> (bool, str):
     if 0 > index >= c_sql.obtener_ajuste("usuarios"):
         return False, "El numero de usuario esta fuera de rango"
@@ -111,6 +84,33 @@ def pagar_n_cuotas(index: int, n: int) -> None:
 
     total: int = valor_cuota * puestos * n
     c_sql.increment("informacion_general", "capital", index, total)
+
+
+def descontar_n_multas(s: str, n: int):
+    s: list[int, ...] = [
+        int(i) if i != "n" else 0 for i in s
+    ]
+    i: int = 0
+
+    for value in s:
+        if n <= 0:
+            break
+
+        if value != 0:
+            if value > n:
+                value -= n
+                n = 0
+            else:
+                n -= value
+                value = 0
+
+            s[i] = value
+
+        i += 1
+
+    return "".join(
+        [str(i) if i != 0 else "n" for i in s]
+    )
 
 
 def pagar_n_multas(index: int, n: int) -> None:
