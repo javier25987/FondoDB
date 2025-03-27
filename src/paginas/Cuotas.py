@@ -70,7 +70,7 @@ cols_2 = st.columns(2, vertical_alignment="bottom")
 
 with cols_2[0]:
     modo_de_pago: str = st.selectbox(
-        "Modo de pago:", ("Efecctivo", "Transferencia")
+        "Modo de pago:", ("Efectivo", "Transferencia")
     )
 
 if cols_2[1].button("Iniciar proceso de pago"):

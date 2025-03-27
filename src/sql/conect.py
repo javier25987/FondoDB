@@ -1,4 +1,5 @@
 import sqlite3 as sql
+import datetime
 
 
 def obtener_ig(colum: str, index: int) -> str | int:
@@ -125,7 +126,7 @@ def obtener_valor(tabla: str, columna: str, index: int) -> str | int:
     return valor
 
 
-def guardar_valor(tabla: str, columna: str, index: int, nuevo_valor: int | str) -> None:
+def guardar_valor(tabla: str, columna: str, index: int, nuevo_valor: int) -> None:
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
@@ -134,6 +135,83 @@ def guardar_valor(tabla: str, columna: str, index: int, nuevo_valor: int | str) 
         UPDATE {tabla}
         SET {columna} = {nuevo_valor}
         WHERE id = {index}
+        """
+    )
+
+    conexion.commit()
+    conexion.close()
+
+
+def guardar_valor_t(tabla: str, columna: str, index: int, nuevo_valor: str) -> None:
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    cursor.execute(
+        f"""
+        UPDATE {tabla}
+        SET {columna} = '{nuevo_valor}'
+        WHERE id = {index}
+        """
+    )
+
+    conexion.commit()
+    conexion.close()
+
+
+def increment(tabla: str, columna: str, index: int, incremento: int) -> None:
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    cursor.execute(
+        f"""
+        SELECT {columna}
+        FROM {tabla}
+        WHERE id = {index}
+        """
+    )
+
+    valor = cursor.fetchall()[0][0]
+
+    valor += incremento
+
+    cursor.execute(
+        f"""
+        UPDATE {tabla}
+        SET {columna} = {valor}
+        WHERE id = {index}
+        """
+    )
+
+    conexion.commit()
+    conexion.close()
+
+
+def registo(incremento: int, ingeso: bool = True) -> None:
+    fecha: str = datetime.datetime.now().strftime("%Y-%m-%d")
+
+    columna: str = "ingreso" if ingeso else "egreso"
+
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    cursor.execute(
+        f"""
+        SELECT {columna}
+        FROM compilacion
+        WHERE fecha = '{fecha}'
+        """
+    )
+
+    valor = cursor.fetchall()
+    valor = valor[0][0]
+
+    valor += incremento
+
+    cursor.execute(
+        f"""
+        UPDATE compilacion
+        SET {columna} = {valor}
+        WHERE fecha = '{fecha}'
         """
     )
 
