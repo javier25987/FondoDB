@@ -217,3 +217,21 @@ def registo(incremento: int, ingeso: bool = True) -> None:
 
     conexion.commit()
     conexion.close()
+
+
+def obtener_datos_rifas(rifa: str, colum: str) -> str | int:
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    cursor.execute(
+        f"""
+        SELECT {colum}
+        FROM datos_de_rifas
+        WHERE rid = 'r{rifa}'
+        """
+    )
+
+    dato = cursor.fetchall()[0][0]
+    conexion.close()
+
+    return dato

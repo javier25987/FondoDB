@@ -41,6 +41,12 @@ if "mes_registro" not in st.session_state:
 if "numero_transf" not in st.session_state:
     st.session_state.numero_transf = -1
 
+if "nombre_para_busqueda" not in st.session_state:
+    st.session_state.nombre_para_busqueda = ""
+
+if "numero_buscar_boleta" not in st.session_state:
+    st.session_state.numero_buscar_boleta = -1
+
 # paginas de usuario general
 paginas_generales: list = [
     st.Page("src/paginas/Menu.py", title="Menu", icon="🏠"),
