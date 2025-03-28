@@ -92,14 +92,30 @@ def obtener_ajuste(nombre: str, is_num: bool = True) -> str | int:
     return resultado
 
 
-def guardar_ajuste(nombre: str, nuevo_valor: int | str, is_num: bool = True) -> None:
+def guardar_ajuste(nombre: str, nuevo_valor: int) -> None:
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
     cursor.execute(
         f"""
         UPDATE ajustes
-        SET {"valor_n" if is_num else "valor_a"} = {nuevo_valor}
+        SET valor_n = {nuevo_valor}
+        WHERE ajuste = '{nombre}'
+        """
+    )
+
+    conexion.commit()
+    conexion.close()
+
+
+def guardar_ajuste_t(nombre: str, nuevo_valor: int | str) -> None:
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    cursor.execute(
+        f"""
+        UPDATE ajustes
+        SET valor_a = '{nuevo_valor}'
         WHERE ajuste = '{nombre}'
         """
     )
@@ -227,7 +243,7 @@ def obtener_datos_rifas(rifa: str, colum: str) -> str | int:
         f"""
         SELECT {colum}
         FROM datos_de_rifas
-        WHERE rid = 'r{rifa}'
+        WHERE id = 'r{rifa}'
         """
     )
 

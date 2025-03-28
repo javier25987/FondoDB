@@ -5,7 +5,60 @@ import pandas as pd
 import datetime
 
 
-# NOTA: ES IMPERATIVO HACER UNA FUNCION DE RECTIFICACION EN ESTE APARTADO
+def sumar_una_multa(s: str, i: int) -> str:
+    s = list(s)
+
+    value = 0 if s[i] == "n" else int(s[i])
+    value += 1
+
+    s[i] = str(value)
+
+    return "".join(s)
+
+
+def rectificar_cuotas(index: int) -> None:
+    calendario: list[datetime.datetime] = list(
+        map(
+            lambda x: datetime.datetime(*x),
+            map(
+                lambda y: map(int, y.split("/")),
+                c_sql.obtener_ajuste("calendario", False).split("_")
+            ),
+        )
+    )
+
+    fecha_actual: datetime = datetime.datetime.now()
+
+    semanas_a_revisar: int = sum(
+        map(lambda x: int(x < fecha_actual), calendario)
+    )
+
+    semanas_revisadas: int = c_sql.obtener_cuotas("revisiones", index)
+
+    if semanas_a_revisar > semanas_revisadas:
+        multas: str = c_sql.obtener_cuotas("multas", index)
+        cobrar_multas: bool = bool(c_sql.obtener_ajuste("cobrar multas"))
+        anular_usuarios: bool = bool(c_sql.obtener_ajuste("anular usuarios"))
+        pagas: int = c_sql.obtener_cuotas("pagas", index)
+        deudas: int = 0
+
+        for i in range(50):
+            if calendario[i] <= fecha_actual:
+                if i >= pagas:
+                    if cobrar_multas:
+                        multas = sumar_una_multa(multas, i)
+                    deudas += 1
+            else:
+                break
+
+        c_sql.guardar_valor_t("cuotas", "multas", index, multas)
+        c_sql.guardar_valor("cuotas", "adeudas", index, deudas)
+        c_sql.guardar_valor("cuotas", "revisiones", index, semanas_a_revisar)
+
+        if multas.count("n") < 47 and anular_usuarios:
+            c_sql.guardar_valor(
+                "informacion_general", "estado", index, 0
+            )
 
 
 def contar_multas(s: str) -> int:
@@ -21,6 +74,8 @@ def abrir_usuario(index: int) -> (bool, str):
     )
     if not estado_usuario:
         return False, f"El usuario № {index} no esta activo"
+
+    rectificar_cuotas(index)
 
     return True, ""
 

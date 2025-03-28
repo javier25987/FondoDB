@@ -19,13 +19,14 @@
 
 * [X]  arranque
 * [X]  menu
-* [ ]  cuotas
+* [X]  cuotas
 * [ ]  prestamos
 * [ ]  rifas
 * [X]  registros
 * [X]  transferencias
-* [ ]  ver socios
-* [ ]  ajustes
+* [X]  ver socios
+* [ ]  Anotaciones
+* [X]  ajustes (temporal)
 * [ ]  modificar socios
 * [ ]  analizar usuarios
 

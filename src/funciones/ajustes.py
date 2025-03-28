@@ -1,7 +1,9 @@
 import src.funciones.prestamos as fp
 import src.funciones.general as fg
+import src.sql.conect as c_sql
 import streamlit as st
 import pandas as pd
+import sqlite3 as sql
 import datetime
 import time
 
@@ -30,47 +32,57 @@ def crear_listado_de_fechas(primera_fecha: str, dobles: list[str]) -> str:
     return "_".join(fechas)
 
 
-def guardar_y_avisar(ajustes: dict, rerun: bool = True):
-    fg.guardar_ajustes(ajustes)
+def avisar(rerun: bool = True):
     if rerun:
         st.success("Valor modificado", icon="✅")
         time.sleep(1)
         st.rerun()
 
 
-def crear_tablas_rifas(ajustes: dict, rifa: str) -> list:
+def crear_tablas_rifas(rifa: str) -> list:
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    cursor.execute(
+        f"""
+        SELECT *
+        FROM datos_de_rifas
+        WHERE id = 'r{rifa}'
+        """
+    )
+
+    datos = cursor.fetchall()[0]
+
+    conexion.close()
+
     return [
         pd.DataFrame(
             {
-                "Numero de boletas": [
-                    "{:,}".format(ajustes[f"r{rifa} numero de boletas"])
-                ],
-                "Numeros por boleta": [str(ajustes[f"r{rifa} numeros por boleta"])],
-                "Boletas por talonario": [
-                    str(ajustes[f"r{rifa} boletas por talonario"])
-                ],
+                "Numero de boletas": [f"{datos[2]:,}"],
+                "Numeros por boleta": [f"{datos[3]:,}"],
+                "Boletas por talonario": [f"{datos[6]:,}"],
             }
         ),
         pd.DataFrame(
             {
-                "Costo por boleta": [
-                    "{:,}".format(ajustes[f"r{rifa} costo de boleta"])
-                ],
-                "Costos de administracion": [
-                    "{:,}".format(ajustes[f"r{rifa} costos de administracion"])
-                ],
-                "Ganancias por boleta": [
-                    "{:,}".format(ajustes[f"r{rifa} ganancia por boleta"])
-                ],
+                "Costo de boleta": [f"{datos[5]:,}"],
+                "Costos de administracion": [f"{datos[7]:,}"],
+                "Ganancias por boleta": [f"{datos[8]:,}"],
             }
         ),
-        pd.DataFrame({"Fecha de cierre": [str(ajustes[f"r{rifa} fecha de cierre"])]}),
-        pd.DataFrame({"Premios": str(ajustes[f"r{rifa} premios"]).split("_")}),
+        pd.DataFrame({"Fecha de cierre": [datos[9]]}),
+        pd.DataFrame(
+            {
+                "Premios": map(
+                    lambda x: f"{int(x):,}" if x != "n" else x,
+                    datos[4].split("_")
+                )
+            }
+        ),
     ]
 
 
 def cargar_datos_de_rifa(
-    ajustes: dict,
     rifa: str,
     numero_de_boletas: int,
     numeros_por_boleta: int,
@@ -89,57 +101,69 @@ def cargar_datos_de_rifa(
 
     premios = "_".join([str(i) for i in premios])
 
-    ajustes[f"r{rifa} numero de boletas"] = numero_de_boletas
-    ajustes[f"r{rifa} numeros por boleta"] = numeros_por_boleta
-    ajustes[f"r{rifa} premios"] = premios
-    ajustes[f"r{rifa} costo de boleta"] = costo_de_boleta
-    ajustes[f"r{rifa} boletas por talonario"] = boletas_por_talonario
-    ajustes[f"r{rifa} costos de administracion"] = costo_de_administracion
-    ajustes[f"r{rifa} ganancia por boleta"] = ganancias_por_boleta
-    ajustes[f"r{rifa} fecha de cierre"] = fecha_de_cierre.strftime("%Y/%m/%d")
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
 
-    fg.guardar_ajustes(ajustes)
+    cursor.execute(
+        f"""
+        UPDATE datos_de_rifas
+        SET 
+            numero_de_boletas = ?, numeros_por_boleta = ?,
+            premios = ?, costo_de_boleta = ?, 
+            boletas_por_talonario = ?, costos_de_administracion = ?,
+            ganancia_por_boleta = ?, fecha_de_cierre = ?
+        WHERE rid = 'r{rifa}'
+        """, (
+            numero_de_boletas, numeros_por_boleta, premios,
+            costo_de_boleta, boletas_por_talonario,
+            costo_de_administracion, ganancias_por_boleta,
+            fecha_de_cierre.strftime("%Y/%m/%d")
+        )
+    )
+
+    conexion.commit()
+    conexion.close()
+
     st.success("Datos cargados", icon="✅")
     time.sleep(1)
     st.rerun()
 
 
-def cerrar_una_rifa(rifa: str, ajustes: dict):
-    df = pd.read_csv(ajustes["nombre df"])
-
-    if ajustes[f"r{rifa} estado"]:
-        fecha_de_cierre = fg.string_a_fecha(ajustes[f"r{rifa} fecha de cierre"])
-
-        if fecha_de_cierre < datetime.datetime.now():
-            numeros = tuple(df["numero"])
-            nombres = tuple(df["nombre"])
-            deudas = tuple(df[f"r{rifa} deudas"])
-
-            progres_text: str = "Rectificando deudas de usuarios ..."
-            func = lambda x: int(x * (100 / len(numeros)))
-            bar = st.progress(0, text=progres_text)
-
-            for i in range(len(nombres)):
-                if deudas[i] > 0:
-                    fp.escribir_prestamo(
-                        numeros[i], "16", deudas[i], ajustes, df, [], []
-                    )
-                    df.loc[numeros[i], f"r{rifa} deudas"] = 0
-
-                    st.toast(
-                        f"💵 Se genero un prestamo por {deudas[i]:,}"
-                        f"para el usuario № {numeros[i]}"
-                    )
-                    bar.progress(func(i), text=progres_text)
-
-            bar.empty()
-            ajustes[f"r{rifa} estado"] = False
-
-            df = df.loc[:, ~df.columns.str.contains("^Unnamed")]
-            df.to_csv(ajustes["nombre df"])
-
-            guardar_y_avisar(ajustes, rerun=False)
-        else:
-            st.error("No se cumple la fecha de cierre", icon="🚨")
-    else:
-        st.error("La rifa no esta activa", icon="🚨")
+# def cerrar_una_rifa(rifa: str):
+#
+#     if ajustes[f"r{rifa} estado"]:
+#         fecha_de_cierre = fg.string_a_fecha(ajustes[f"r{rifa} fecha de cierre"])
+#
+#         if fecha_de_cierre < datetime.datetime.now():
+#             numeros = tuple(df["numero"])
+#             nombres = tuple(df["nombre"])
+#             deudas = tuple(df[f"r{rifa} deudas"])
+#
+#             progres_text: str = "Rectificando deudas de usuarios ..."
+#             func = lambda x: int(x * (100 / len(numeros)))
+#             bar = st.progress(0, text=progres_text)
+#
+#             for i in range(len(nombres)):
+#                 if deudas[i] > 0:
+#                     fp.escribir_prestamo(
+#                         numeros[i], "16", deudas[i], ajustes, df, [], []
+#                     )
+#                     df.loc[numeros[i], f"r{rifa} deudas"] = 0
+#
+#                     st.toast(
+#                         f"💵 Se genero un prestamo por {deudas[i]:,}"
+#                         f"para el usuario № {numeros[i]}"
+#                     )
+#                     bar.progress(func(i), text=progres_text)
+#
+#             bar.empty()
+#             ajustes[f"r{rifa} estado"] = False
+#
+#             df = df.loc[:, ~df.columns.str.contains("^Unnamed")]
+#             df.to_csv(ajustes["nombre df"])
+#
+#             guardar_y_avisar(ajustes, rerun=False)
+#         else:
+#             st.error("No se cumple la fecha de cierre", icon="🚨")
+#     else:
+#         st.error("La rifa no esta activa", icon="🚨")

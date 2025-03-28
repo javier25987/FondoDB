@@ -1,5 +1,6 @@
 import src.funciones.ajustes as fa
 import src.funciones.general as fg
+import src.sql.conect as c_sql
 import streamlit as st
 import pandas as pd
 import os
@@ -17,21 +18,17 @@ tab = list(
             "Prestamos",
             "Usuarios",
             "Fechas",
-            "Tabla de usuarios",
             "Guardado de datos",
-            "Rifas",
-            "Apariencia",
+            "Rifas"
         ]
     )
 )
 key: int = 1
 
-ajustes: dict = fg.abrir_ajustes()
-
 with tab[0]:
     st.header("Calendario:")
 
-    calendario: str = ajustes["calendario"]
+    calendario: str = c_sql.obtener_ajuste("calendario", False)
 
     if calendario == "n":
         st.error("No hay un calendario", icon="🚨")
@@ -82,10 +79,13 @@ with tab[0]:
         if len(set(fechas_dobles)) != len(fechas_dobles):
             st.error("Hay fechas dobles repetidas", icon="🚨")
         else:
-            ajustes["calendario"] = fa.crear_listado_de_fechas(
-                n_fecha_inicial, fechas_dobles
+            c_sql.guardar_ajuste_t(
+                "calendario",
+                fa.crear_listado_de_fechas(
+                    n_fecha_inicial, fechas_dobles
+                )
             )
-            fa.guardar_y_avisar(ajustes)
+            fa.avisar()
     key += 1
 
     st.divider()
@@ -97,8 +97,8 @@ with tab[0]:
 
     with col0_1[1]:
         if st.button("Eliminar calendario", key=f"key: {key}"):
-            ajustes["calendario"] = "n"
-            fa.guardar_y_avisar(ajustes)
+            c_sql.guardar_ajuste_t("calendario", "n")
+            fa.avisar()
         key += 1
 
 with tab[1]:
@@ -114,7 +114,7 @@ with tab[1]:
         st.subheader("Por puesto:")
 
         st.write(
-            f"Valor de la cuota por puesto: {'{:,}'.format(ajustes['valor cuota'])}"
+            f"Valor de la cuota por puesto: {c_sql.obtener_ajuste("valor cuota"):,}"
         )
 
         n_cuota_puesto = st.number_input(
@@ -122,20 +122,20 @@ with tab[1]:
         )
 
         if st.button("Modificar", key=f"key: {key}"):
-            ajustes["valor cuota"] = n_cuota_puesto
-            fa.guardar_y_avisar(ajustes)
+            c_sql.guardar_ajuste("valor cuota", n_cuota_puesto)
+            fa.avisar()
         key += 1
 
     with col1[1]:
         st.subheader("Por multa:")
         st.write(
-            f"Valor de la multa por puesto: {'{:,}'.format(ajustes['valor multa'])}"
+            f"Valor de la multa por puesto: {c_sql.obtener_ajuste("valor multa"):,}"
         )
         n_cuota_multa = st.number_input("Nuevo valor de la multa:", value=3000, step=1)
 
         if st.button("Modificar", key=f"key: {key}"):
-            ajustes["valor multa"] = n_cuota_multa
-            fa.guardar_y_avisar(ajustes)
+            c_sql.guardar_ajuste("valor multa", n_cuota_multa)
+            fa.avisar()
         key += 1
 
 with tab[2]:
@@ -144,14 +144,14 @@ with tab[2]:
     with col2[0]:
         st.subheader("Contraseña actual: ")
 
-        st.caption(f"# {ajustes['clave de acceso']}")
+        st.caption(f"# {c_sql.obtener_ajuste("clave acceso", False)}")
 
     with col2[1]:
         nueva_clave = st.text_input("Nueva contraseña:")
 
         if st.button("Modificar", key=f"key: {key}"):
-            ajustes["clave de acceso"] = nueva_clave
-            fa.guardar_y_avisar(ajustes)
+            c_sql.guardar_ajuste_t("clave acceso", nueva_clave)
+            fa.avisar()
         key += 1
 
 with tab[3]:
@@ -166,13 +166,13 @@ with tab[3]:
     col3_1 = st.columns(2)
 
     with col3_1[0]:
-        st.markdown(f"##### Tope actual: {'{:,}'.format(ajustes['tope de intereses'])}")
+        st.markdown(f"##### Tope actual: {c_sql.obtener_ajuste("tope intereses"):,}")
 
     with col3_1[1]:
         nuevo_tope: int = st.number_input("Nuevo tope:", value=20000000, step=1)
         if st.button("Modificar", key=f"key: {key}"):
-            ajustes["tope de intereses"] = nuevo_tope
-            fa.guardar_y_avisar(ajustes)
+            c_sql.guardar_ajuste("tope intereses", nuevo_tope)
+            fa.avisar()
         key += 1
     st.divider()
     st.markdown("## Interes por prestamo:")
@@ -189,15 +189,17 @@ with tab[3]:
     with col3_2[0]:
         st.markdown("### Menos de el tope:")
         st.markdown(
-            f"##### el interes actual por prestamo es: {ajustes['interes < tope']} %"
+            f"##### el interes actual por prestamo es: {
+                c_sql.obtener_ajuste("interes m tope")
+            } %"
         )
     with col3_2[1]:
         nuevo_interes_m_tope: int = st.number_input(
             "Nuevo interes menor a el tope:", value=3, step=1
         )
         if st.button("Modificar", key=f"key: {key}"):
-            ajustes["interes < tope"] = nuevo_interes_m_tope
-            fa.guardar_y_avisar(ajustes)
+            c_sql.guardar_ajuste("interes m tope", nuevo_interes_m_tope)
+            fa.avisar()
         key += 1
         st.divider()
 
@@ -206,15 +208,17 @@ with tab[3]:
     with col3_3[0]:
         st.markdown("### Mas de el tope:")
         st.markdown(
-            f"##### el interes actual por prestamo es: {ajustes['interes > tope']} %"
+            f"##### el interes actual por prestamo es: {
+                c_sql.obtener_ajuste("interes M tope")
+            } %"
         )
     with col3_3[1]:
         nuevo_interes_M_tope: int = st.number_input(
             "Nuevo interes mayor a el tope:", value=2, step=1
         )
         if st.button("Modificar", key=f"key: {key}"):
-            ajustes["interes > tope"] = nuevo_interes_M_tope
-            fa.guardar_y_avisar(ajustes)
+            c_sql.guardar_ajuste("interes M tope", nuevo_interes_M_tope)
+            fa.avisar()
         key += 1
 
     st.divider()
@@ -226,7 +230,7 @@ with tab[3]:
     with col3_4[0]:
         st.markdown(
             f"##### Actual mente se puede usar un `{
-                ajustes['capital usable']
+                c_sql.obtener_ajuste("capital usable")
             }%` del capital guardado."
         )
 
@@ -243,8 +247,8 @@ with tab[3]:
         )
 
         if st.button("Modificar", key=f"key: {key}"):
-            ajustes["capital usable"] = nuevo_capital_usable
-            fa.guardar_y_avisar(ajustes)
+            c_sql.guardar_ajuste("capital usable", nuevo_capital_usable)
+            fa.avisar()
         key += 1
 
 with tab[4]:
@@ -255,14 +259,16 @@ with tab[4]:
     with col4_1[0]:
         st.markdown("### Numero de usuarios:")
 
-        st.write(f"actualmete en el programa hay [ {ajustes['usuarios']} ] usuarios")
+        st.write(f"actualmete en el programa hay [ {
+            c_sql.obtener_ajuste("usuarios")
+        } ] usuarios")
     with col4_1[1]:
         nuevo_usuarios: int = st.number_input(
             "Nuevo numero de usuarios:", value=0, step=1
         )
         if st.button("Modificar", key=f"key: {key}"):
-            ajustes["usuarios"] = nuevo_usuarios
-            fa.guardar_y_avisar(ajustes)
+            c_sql.guardar_ajuste("usuarios", nuevo_usuarios)
+            fa.avisar()
         key += 1
     st.divider()
 
@@ -270,26 +276,32 @@ with tab[4]:
 
     with col4_2[0]:
         st.subheader("Desactivar usuarios:")
-        if ajustes["anular usuarios"]:
+        desactivar_usuarios: bool = bool(c_sql.obtener_ajuste("anular usuarios"))
+        if desactivar_usuarios:
             st.write("Los usuarios seran desactivados")
         else:
             st.write("Los usuarios NO seran desactivados")
 
         if st.button("Invertir", key=f"key: {key}"):
-            ajustes["anular usuarios"] = not ajustes["anular usuarios"]
-            fa.guardar_y_avisar(ajustes)
+            c_sql.guardar_ajuste(
+                "anular usuarios", int(not desactivar_usuarios)
+            )
+            fa.avisar()
         key += 1
 
     with col4_2[1]:
-        st.subheader("Cobrar multas")
-        if ajustes["cobrar multas"]:
+        st.subheader("Cobrar multas:")
+        cobrar_multas: bool = bool(c_sql.obtener_ajuste("cobrar multas"))
+        if cobrar_multas:
             st.write("Actualmente se generan multas")
         else:
             st.write("Actualmete NO se generan multas")
 
         if st.button("Invertir", key=f"key: {key}"):
-            ajustes["cobrar multas"] = not ajustes["cobrar multas"]
-            fa.guardar_y_avisar(ajustes)
+            c_sql.guardar_ajuste(
+                "cobrar multas", int(not cobrar_multas)
+            )
+            fa.avisar()
         key += 1
 
 with tab[5]:
@@ -298,14 +310,18 @@ with tab[5]:
     with col5[0]:
         st.subheader("Fecha de cierre: ")
 
-        st.write(f"fecha de cierre actual: {ajustes['fecha de cierre']}")
+        st.write(f"fecha de cierre actual: {
+            c_sql.obtener_ajuste("fecha de cierre", False)
+        }")
 
     with col5[1]:
         n_fecha: datetime = st.date_input("Nueva fecha de cierre:")
 
         if st.button("Modificar", key=f"key: {key}"):
-            ajustes["fecha de cierre"] = n_fecha.strftime("%Y/%m/%d")
-            fa.guardar_y_avisar(ajustes)
+            c_sql.guardar_ajuste_t(
+                "fecha de cierre", n_fecha.strftime("%Y/%m/%d")
+            )
+            fa.avisar()
         key += 1
 
     st.markdown(
@@ -317,44 +333,19 @@ with tab[5]:
     )
 
 with tab[6]:
-    col6_1 = st.columns(2)
-
-    with col6_1[0]:
-        st.subheader("Nombre de la tabla:")
-        st.write(f"Tabla de trabajo actual: {ajustes['nombre df']}")
-    with col6_1[1]:
-        n_nombre_tabla: str = st.text_input("Nuevo nombre:")
-
-        if st.button("Modificar", key=f"key: {key}"):
-            ajustes["nombre df"] = n_nombre_tabla
-            fa.guardar_y_avisar(ajustes)
-        key += 1
-    st.divider()
-
-    col6_2 = st.columns(2)
-    with col6_2[0]:
-        st.subheader("Numero de generacion:")
-        st.write(f"Numero de generacion actual: {ajustes['numero de creacion']}")
-    with col6_2[1]:
-        n_numero_gen: int = st.number_input(
-            "Nuevo numero de generacion:", value=1, step=1
-        )
-        if st.button("Modificar", key=f"key: {key}"):
-            ajustes["numero de creacion"] = n_numero_gen
-            fa.guardar_y_avisar(ajustes)
-        key += 1
-
-with tab[7]:
     col7_1 = st.columns(2, vertical_alignment="center")
 
     with col7_1[0]:
         st.subheader("Ruta de el programa: ")
-        st.write(f"Ruta de el programa: {ajustes['path programa']}")
+        st.write(f"Ruta de el programa: {
+            c_sql.obtener_ajuste("path programa", False)
+        }")
 
     with col7_1[1]:
         if st.button("Configurar path", key=f"key: {key}"):
-            ajustes["path programa"] = os.getcwd()
-            fa.guardar_y_avisar(ajustes)
+            print("path: ", os.getcwd())
+            c_sql.guardar_ajuste_t("path programa", os.getcwd())
+            fa.avisar()
         key += 1
     st.divider()
 
@@ -362,14 +353,16 @@ with tab[7]:
 
     with col7_2[0]:
         st.subheader("Enlace de el repositorio")
-        st.write(f"Enlace actual: {ajustes['enlace repo']}")
+        st.write(f"Enlace actual: {
+            c_sql.obtener_ajuste("enlace repo", False)
+        }")
 
     with col7_2[1]:
         n_enlace: str = st.text_input("Nuevo enlace:")
 
         if st.button("Modificar", key=f"key: {key}"):
-            ajustes["enlace repo"] = n_enlace
-            fa.guardar_y_avisar(ajustes)
+            c_sql.guardar_ajuste_t("enlace repo", n_enlace)
+            fa.avisar()
         key += 1
     st.divider()
 
@@ -377,24 +370,24 @@ with tab[7]:
 
     with col7_3[0]:
         st.subheader("Commits hechos")
-        st.write(f"Commits realizados: {ajustes['commits hechos']}")
+        st.write(f"Commits realizados: {c_sql.obtener_ajuste("commits hechos")}")
 
     with col7_3[1]:
         n_comits: int = st.number_input("Nuevos commits:", value=0, step=1)
 
         if st.button("Modificar", key=f"key: {key}"):
-            ajustes["commits hechos"] = n_comits
-            fa.guardar_y_avisar(ajustes)
+            c_sql.guardar_ajuste("commits hechos", n_comits)
+            fa.avisar()
         key += 1
 
-with tab[8]:
+with tab[7]:
     n_rifas = ("1", "2", "3", "4")
     st.header("Ver rifas:")
     tab_8 = st.tabs(["Rifa 1", "Rifa 2", "Rifa 3", "Rifa 4"])
     count: int = 0
     for i in n_rifas:
         with tab_8[count]:
-            for j in fa.crear_tablas_rifas(ajustes, i):
+            for j in fa.crear_tablas_rifas(i):
                 st.table(j)
         count += 1
 
@@ -439,7 +432,6 @@ with tab[8]:
             for i in range(1, r_numeros_por_boleta + 1):
                 premios.append(st.session_state[f"premio: {i}"])
             fa.cargar_datos_de_rifa(
-                ajustes,
                 r_rifa,
                 r_numero_de_boletas,
                 r_numeros_por_boleta,
@@ -455,36 +447,27 @@ with tab[8]:
     for i, j in zip(st.columns(4), n_rifas):
         with i:
             st.subheader(f"Rifa {j}:")
-            if ajustes[f"r{j} estado"]:
+            if c_sql.obtener_datos_rifas(j,"estado"):
                 st.write(f"La rifa {j} esta activa")
             else:
                 st.write(f"La rifa {j} NO esta activa")
 
             if st.button("Modificar", key=f"key: {key}"):
-                ajustes[f"r{j} estado"] = not ajustes[f"r{j} estado"]
-                fa.guardar_y_avisar(ajustes)
+                c_sql.guardar_valor(
+                    "datos_de_rifas",
+                    "estado",
+                    f"r{j}",
+                    not bool(c_sql.obtener_datos_rifas(j, "estado"))
+                )
+                fa.avisar()
             key += 1
 
     st.divider()
-    st.header("Cerrar rifas:")
-
-    for i, j in zip(st.columns(4), n_rifas):
-        with i:
-            st.subheader(f"Rifa {j}:")
-            if st.button("Cerrar rifa", key=f"key: {key}"):
-                fa.cerrar_una_rifa(j, ajustes)
-            key += 1
-
-with tab[9]:
-    st.subheader("Modificar y eliminar anotaciones:")
-
-    col9_1 = st.columns([7, 3], vertical_alignment="center")
-
-    with col9_1[0]:
-        st.write("Mostrar los menus para modificar y eliminar anotaciones:")
-        st.caption(f"# ***{ajustes['mostrar MyE']}***")
-    with col9_1[1]:
-        if st.button("Invertir valor", key=f"key: {key}"):
-            ajustes["mostrar MyE"] = not ajustes["mostrar MyE"]
-            fa.guardar_y_avisar(ajustes)
-        key += 1
+    # st.header("Cerrar rifas:")
+    #
+    # for i, j in zip(st.columns(4), n_rifas):
+    #     with i:
+    #         st.subheader(f"Rifa {j}:")
+    #         if st.button("Cerrar rifa", key=f"key: {key}"):
+    #             fa.cerrar_una_rifa(j, ajustes)
+    #         key += 1
