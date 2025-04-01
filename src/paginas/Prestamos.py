@@ -151,21 +151,23 @@ with tab[1]:
             fg.advertencia()
 
 with tab[2]:
-    capital: list = fp.consultar_capital_disponible(index)
+    estado: list = fp.consultar_capital_disponible(index)
 
     st.subheader("Capital")
-    st.write(f"capital guardado: {capital[1]}")
-    st.write(f"Capital disponible para retirar: {capital[2]}")
+    st.write(f"capital guardado: {estado[0]:,}")
+    st.write(f"Capital disponible para retirar: {estado[1]:,}")
 
-    st.subheader("Deudas")
+    st.subheader("Deudas por fiador:")
 
-    st.write(f"Deudas por fiador: {capital[3]}.")
-    st.write(f"Fiador de: {df['fiador de'][index]}")
+    st.write(f"Deudas por fiador: {estado[2]:,}.")
+    st.write(f"Fiador de: {estado[3]}")
 
-    st.write("Deudas en prestamos:")
-    st.table(capital[4])
+    st.subheader("Deudas en prestamos:")
+    st.table(estado[4])
+    st.markdown(f"##### TOTAL: {estado[7][0]:,}")
 
-    st.write("Deudas por intereses vencidos:")
-    st.table(capital[5])
+    st.subheader("Deudas por intereses vencidos:")
+    st.table(estado[5])
+    st.markdown(f"##### TOTAL: {estado[7][1]:,}")
 
-    st.header(f"Dinero disponible para retirar: {capital[0]}")
+    st.header(f"Dinero disponible para retirar: {estado[6]:,}")

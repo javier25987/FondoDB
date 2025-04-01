@@ -72,56 +72,100 @@ def crear_tablas_de_prestamos(index: int):
     return result
 
 
-def consultar_capital_disponible(index: int, ajustes: dict, df) -> tuple:
-    capital: int = int(df["capital"][index])
-    capital_disponible: int = int(capital * ajustes["capital usable"] / 100)
+def consultar_capital_disponible(index: int) -> tuple:
 
-    deudas_por_fiador: int = int(df["deudas por fiador"][index])
-
-    deudas_en_prestamos_tabla: dict = {"Ranuras": [], "Deudas": []}
-    deudas_en_prestamos: int = 0
-
-    deudas_por_intereses_tabla: dict = {"Ranuras": [], "Deudas": []}
-    deudas_por_intereses: int = 0
-
-    for i in range(1, 17):
-        if df[f"p{i} estado"][index] != "activo":
-            prestamo: list[str] = df[f"p{i} prestamo"][index].split("_")
-
-            deuda_prestamo: int = int(prestamo[3])
-            if deuda_prestamo > 0:
-                deudas_en_prestamos_tabla["Ranuras"].append(f"Ranura {i}")
-                deudas_en_prestamos_tabla["Deudas"].append(
-                    "{:,}".format(deuda_prestamo)
-                )
-                deudas_en_prestamos += deuda_prestamo
-
-            deuda_intereses: int = int(prestamo[1])
-            if deuda_intereses > 0:
-                deudas_por_intereses_tabla["Ranuras"].append(f"Ranura {i}")
-                deudas_por_intereses_tabla["Deudas"].append(
-                    "{:,}".format(deuda_intereses)
-                )
-                deudas_por_intereses += deuda_intereses
-
-    deudas_en_prestamos_tabla["Ranuras"].append("TOTAL:")
-    deudas_en_prestamos_tabla["Deudas"].append("{:,}".format(deudas_en_prestamos))
-
-    deudas_por_intereses_tabla["Ranuras"].append("TOTAL:")
-    deudas_por_intereses_tabla["Deudas"].append("{:,}".format(deudas_por_intereses))
-
-    capital_total: int = capital_disponible - (
-        deudas_por_fiador + deudas_en_prestamos + deudas_por_intereses
+    capital: int = c_sql.obtener_ig("capital", index)
+    capital_disponible: int = int(
+        capital * c_sql.obtener_ajuste("capital usable") / 100
     )
+
+    deudas_por_fiador: int = c_sql.obtener_prestamos("deudas_por_fiador", index)
+    fiador_de: str = c_sql.obtener_prestamos("fiador_de", index)
+
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    cursor.execute(
+        f"""
+        SELECT 
+            ph.codigo, ph.deuda
+        FROM prestamos_hechos ph
+        WHERE 
+            ph.id = {index} AND ph.estado = 1
+        """
+    )
+
+    datos = cursor.fetchall()
+
+    tablas_deudas = {}
+    if len(datos) != 0:
+        datos = list(zip(*datos))
+
+        datos[1] = [f"{i:,}" for i in datos[1]]
+
+        tablas_deudas = pd.DataFrame(
+            {
+                "Codigo del prestamo": datos[0],
+                "Deudas": datos[1]
+            }
+        )
+
+    cursor.execute(
+        f"""
+        SELECT 
+            ph.codigo, ph.instereses_vencidos 
+        FROM prestamos_hechos ph
+        WHERE 
+            ph.id = {index} AND 
+            ph.estado = 1 AND 
+            ph.instereses_vencidos > 0
+        """
+    )
+
+    datos = cursor.fetchall()
+
+    tablas_intereses = {}
+    if len(datos) != 0:
+        datos = list(zip(*datos))
+
+        datos[1] = [f"{i:,}" for i in datos[1]]
+
+        tablas_intereses = pd.DataFrame(
+            {
+                "Codigo del prestamo": datos[0],
+                "Deudas": datos[1]
+            }
+        ) 
+
+    cursor.execute(
+        f"""
+        SELECT 
+            SUM(ph.deuda), 
+            SUM(ph.instereses_vencidos)
+        FROM prestamos_hechos ph
+        WHERE 
+            ph.id = {index} AND ph.estado = 1
+        """
+    )
+
+    datos = cursor.fetchall()
+    conexion.close()
+
+    print(f"estos son los valores: {datos}")
+
+    total_deudas = [0, 0]
+    if datos[0][0] is not None and datos[0][1] is not None:
+        total_deudas[0] = datos[0][0] 
+        total_deudas[1] = datos[0][1]
+
+    total_disponible = capital_disponible - sum(total_deudas)
 
     return (
-        "{:,}".format(capital_total),  # 0
-        "{:,}".format(capital),  # 1
-        "{:,}".format(capital_disponible),  # 2
-        "{:,}".format(deudas_por_fiador),  # 3
-        pd.DataFrame(deudas_en_prestamos_tabla),  # 4
-        pd.DataFrame(deudas_por_intereses_tabla),  # 5
+        capital, capital_disponible, deudas_por_fiador, 
+        fiador_de, tablas_deudas, tablas_intereses,
+        total_disponible, total_deudas
     )
+
 
 
 def consultar_capital_usuario(index: int, ajustes: dict, df) -> int:
@@ -197,14 +241,10 @@ def hacer_carta_de_prestamo() -> None:
 
 
 def rectificar_viavilidad(
-    index: int,
-    ranura: str,
-    valor: int,
-    ajustes: dict,
-    df,
-    fiadores: list[int] = list,
+    index: int, valor: int, fiadores: list[int] = list,
     deudas_con_fiadores: list[int] = list,
-) -> (bool, str):
+) -> (bool, str): # type: ignore
+    
     # truco para saltarse toda la asuntos del prestamo
     if 1976 in fiadores:
         nota_a_incluir: str = (
@@ -233,7 +273,6 @@ def rectificar_viavilidad(
         return False, "La deuda con fiadores supera el valor de el prestamo"
 
     # rectificar para capital negativo o positivo
-
     if capital_disponible > 0:
         if valor - sum_deudas > capital_disponible:
             return False, "El dinero de el usuario no alcanza para el prestamo"
@@ -360,14 +399,10 @@ def escribir_prestamo(
 
 @st.dialog("Formulario de prestamo")
 def formulario_de_prestamo(
-    index: int,
-    ranura: str,
-    valor: int,
-    ajustes: dict,
-    df,
-    fiadores: list[int] = list,
+    index: int, valor: int, fiadores: list[int] = list,
     deudas_fiadores: list[int] = list,
 ) -> None:
+    
     st.header(f"№ {index}: {df['nombre'][index].title()}")
     st.divider()
 
@@ -389,65 +424,6 @@ def formulario_de_prestamo(
     if st.button("Realizar prestamo", key="BotonNoSe"):
         escribir_prestamo(index, ranura, valor, ajustes, df, fiadores, deudas_fiadores)
         st.rerun()
-
-
-def realizar_anotacion(
-    index: int, anotacion: str, ajustes: dict, df
-) -> tuple[bool, str]:
-    anotaciones: str = df["anotaciones de prestamos"][index]
-
-    if "_" in anotacion:
-        return False, "El simbolo '_' no puede estar en la anotacion"
-    elif anotacion == "":
-        return False, "La anotacion esta vacia"
-    else:
-        if anotaciones == "n":
-            anotaciones = anotacion
-        else:
-            anotacion = "_" + anotacion
-            anotaciones += anotacion
-
-        df.loc[index, "anotaciones de prestamos"] = anotaciones
-
-        df = df.loc[:, ~df.columns.str.contains("^Unnamed")]
-        df.to_csv(ajustes["nombre df"])
-
-        return True, ""
-
-
-def eliminar_anotacion(index: int, pos: int, ajustes: dict, df):
-    anotaciones: str = df["anotaciones de prestamos"][index]
-    anotaciones: list[str] = anotaciones.split("_")
-
-    if len(anotaciones) == 1:
-        anotaciones = "n"
-    else:
-        anotaciones.pop(pos)
-        anotaciones = "_".join(anotaciones)
-
-    df.loc[index, "anotaciones de prestamos"] = anotaciones
-    df = df.loc[:, ~df.columns.str.contains("^Unnamed")]
-    df.to_csv(ajustes["nombre df"])
-
-
-def modificar_anotacion(index: int, pos: int, new_elem: str, ajustes: dict, df):
-    anotaciones: str = df["anotaciones de prestamos"][index]
-    anotaciones: list[str] = anotaciones.split("_")
-
-    if new_elem == "":
-        anotaciones[pos] = "n"
-    elif "_" in new_elem:
-        st.error("El simbolo '_' no puede estar en la anotacion", icon="🚨")
-        return 0
-    else:
-        anotaciones[pos] = new_elem
-
-    anotaciones = "_".join(anotaciones)
-
-    df.loc[index, "anotaciones de prestamos"] = anotaciones
-    df = df.loc[:, ~df.columns.str.contains("^Unnamed")]
-    df.to_csv(ajustes["nombre df"])
-
 
 def pagar_un_prestamo(index: int, ranura: str, monto: int, ajustes: dict, df):
     monto_nota: int = monto
@@ -513,8 +489,6 @@ def pagar_un_prestamo(index: int, ranura: str, monto: int, ajustes: dict, df):
         f"ranura № {ranura}."
     )
 
-    realizar_anotacion(index, anotacion, ajustes, df)
-
 
 @st.dialog("Pago de prestamo")
 def formato_de_abono(
@@ -538,7 +512,7 @@ def formato_de_abono(
         st.rerun()
 
 
-def arreglar_asuntos(index: int, ajustes: dict, df) -> None:
+def arreglar_asuntos(index: int) -> None:
     ranuras: list[str] = list(map(str, range(1, 17)))
 
     guardar: bool = False
