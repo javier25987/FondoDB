@@ -61,11 +61,23 @@ def rectificar_cuotas(index: int) -> None:
             )
 
 
-def contar_multas(s: str) -> int:
-    return sum(int(i) for i in s if i != "n")
+def contar_multas(comp: str) -> int:
+    if comp == "n":
+        return 0
+    
+    des_comp = list(
+        map(
+            lambda x: list(
+                map(int, x.split(":"))
+            ), 
+        comp.split("_")
+        )
+    )
+
+    return sum(j for _, j in des_comp)
 
 
-def abrir_usuario(index: int) -> (bool, str):
+def abrir_usuario(index: int) -> (bool, str): # type: ignore
     if 0 > index >= c_sql.obtener_ajuste("usuarios"):
         return False, "El numero de usuario esta fuera de rango"
 
@@ -91,6 +103,8 @@ def tablas_para_cuotas_y_multas(index: int):
     )
 
     multas: str = c_sql.obtener_cuotas( "multas", index)
+    multas = multas_comp_str(multas)
+
     cuotas_pagas: int = c_sql.obtener_cuotas( "pagas", index)
     cuotas_adeud: int = c_sql.obtener_cuotas( "adeudas", index)
 
@@ -141,31 +155,30 @@ def pagar_n_cuotas(index: int, n: int) -> None:
     c_sql.increment("informacion_general", "capital", index, total)
 
 
-def descontar_n_multas(s: str, n: int):
-    s: list[int, ...] = [
-        int(i) if i != "n" else 0 for i in s
-    ]
-    i: int = 0
-
-    for value in s:
-        if n <= 0:
-            break
-
-        if value != 0:
-            if value > n:
-                value -= n
-                n = 0
-            else:
-                n -= value
-                value = 0
-
-            s[i] = value
-
-        i += 1
-
-    return "".join(
-        [str(i) if i != 0 else "n" for i in s]
+def descontar_n_multas(comp: str, n: int) -> str:
+    
+    des_comp = list(
+        map(
+            lambda x: list(
+                map(int, x.split(":"))
+            ), 
+        comp.split("_")
+        )
     )
+
+    for i in range(len(des_comp)):
+        if des_comp[i][1] > n:
+            des_comp[i][1] -= n
+            break
+        else:
+            n -= des_comp[i][1]
+            des_comp[i][1] = 0
+
+    salida = [
+        f"{i}:{j}" for i, j in des_comp if j != 0
+    ]
+
+    return "_".join(salida) if len(salida) != 0 else "n"
 
 
 def pagar_n_multas(index: int, n: int) -> None:
@@ -203,7 +216,7 @@ def crear_nuevo_cheque(
     total_multas: int = multas_pagadas * valor_multa * puestos
     total_cuotas: int = cuotas_pagadas * valor_cuota * puestos
 
-    cheque: list[str, ...] = [
+    cheque: list[str] = [
         "===========================\n",
         "=                         =\n",
         "=    FONDO SAN JAVIER     =\n",
@@ -308,3 +321,36 @@ def formulario_de_pago(
         c_sql.registo(total_a_pagar)
 
         st.rerun()
+
+
+def multas_comp_str(comp: str) -> str:
+    
+    if comp == "n":
+        return "n"*50
+    
+    des_comp = list(
+        map(
+            lambda x: list(
+                map(int, x.split(":"))
+            ), 
+            comp.split("_")
+        )
+    )
+
+    result = ["n"]*50
+
+    for i, j in des_comp:
+        result[i] = str(j)
+
+    return "".join(result)
+
+
+def multas_str_comp(multas: str) -> dict[int: int]:
+
+    result = [
+        f"{i}:{multas[i]}" 
+        for i in range(len(multas)) 
+        if multas[i] != "n"
+    ]
+    
+    return "_".join(result) if len(result) != 0 else "n"

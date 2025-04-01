@@ -6,7 +6,6 @@ tabs = st.tabs(
     [
         "Buscar Usuarios",
         "Ver si necesita acuerdo",
-        "Verificar ranura 16",
         "Buscar boleta"
     ]
 )
@@ -35,9 +34,6 @@ with tabs[1]:
     st.table(fv.tabla_acuerdo())
 
 with tabs[2]:
-    st.table(fv.tabla_ranura())
-
-with tabs[3]:
     rifa_a_buscar: str = st.selectbox(
         "Seleccione la rifa en la que desea buscar:",
         ("1", "2", "3", "4")

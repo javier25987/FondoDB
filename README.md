@@ -13,7 +13,7 @@
 ## Deuda tecnica
 
 * algoritmo para identificar boletas repetidas (seccion de rifas)
-* terminar seccion de pagos en cuotas
+* hacer el sistema de anotaciones para pagos de boletas
 
 ## Secciones finalizadas
 
@@ -21,7 +21,7 @@
 * [X]  menu
 * [X]  cuotas
 * [ ]  prestamos
-* [ ]  rifas
+* [X]  rifas
 * [X]  registros
 * [X]  transferencias
 * [X]  ver socios
@@ -34,19 +34,9 @@
 
 actualmenre solo hay que añadir un boton de actualizacion que copie todos los hechos en el repositorio padre esto no se considera como un error ya que es solo una funcion que puede ser descartada por el problema de que git no resuelve los conflictos de un merge automaticamente
 
-> actualmente es esencial a la hora de descargar el programa borrar el archivo `.gitignore` de lo contrario los cambios no se guargaran en el repositorio remoto
-
 ## Codigo que elimine y podria servir en un futuro
 
-```python
-"""
-    tabla_ranura["p16 estado"] = tabla_ranura[
-        "p16 estado"
-    ].apply(
-        lambda x: "✅" if x == "activo" else "🚨"
-    )
-"""
-```
+vacio
 
 ## Datos a tener en cuenta para mostara en la tabla
 

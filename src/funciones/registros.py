@@ -10,7 +10,7 @@ def solicitar_registro(mes: int) -> None:
             STRFTIME('%d', fecha),
             ingreso,
             egreso
-        FROM compilacion
+        FROM registros
         WHERE STRFTIME('%m', fecha) = '{str(mes) if mes > 9 else f"0{mes}"}'
         """
     )

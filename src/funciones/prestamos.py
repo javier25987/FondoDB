@@ -1,76 +1,75 @@
 import src.funciones.general as fg
+import src.sql.conect as c_sql
+import sqlite3 as sql
 import streamlit as st
 import pandas as pd
 import datetime
 
 
-def abrir_usuario(index: int, ajustes: dict, df) -> (bool, str):
-    if 0 > index >= ajustes["usuarios"]:
+def abrir_usuario(index: int) -> (bool, str): # type: ignore
+    if 0 > index >= c_sql.obtener_ajuste("usuarios"):
         return False, "El numero de usuario esta fuera de rango"
 
-    if df["estado"][index] != "activo":
-        return (
-            False,
-            "fEl usuario № {index} no esta activo",
-        )
+    estado_usuario: bool = bool(
+        c_sql.obtener_ig("estado", index)
+    )
+    if not estado_usuario:
+        return False, f"El usuario № {index} no esta activo"
 
     return True, ""
 
 
-def crear_tablas_de_ranura(
-    prestamo: str, fechas: str
-) -> (pd.DataFrame, pd.DataFrame, pd.DataFrame, bool, int):
-    prestamo: list[str] = prestamo.split("_")
-    deudas = int(prestamo[3]) + int(prestamo[1])
-    return (
-        pd.DataFrame(
-            {
-                "Deuda": ["{:,}".format(int(prestamo[3]))],
-                "Interes": [f"{prestamo[0]} %"],
-                "Intereses Vencidos": ["{:,}".format(int(prestamo[1]))],
-            }
-        ),
-        pd.DataFrame({"Fechas": fechas.split("_")}),
-        pd.DataFrame(
-            {
-                "Fiadores": prestamo[4].split("#"),
-                "Deuda Con fiadores": prestamo[5].split("#"),
-            }
-        ),
-        True if deudas == 0 else False,
-        deudas,
+def crear_tablas_de_prestamos(index: int):
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    cursor.execute(
+        f"""
+        SELECT 
+            ph.codigo, ph.interes, ph.instereses_vencidos,
+            ph.deuda, ph.fiadores,  ph.deuda_con_fiadores, 
+            (ph.instereses_vencidos + ph.deuda),
+            ph.fechas_de_pago
+        FROM prestamos_hechos ph 
+        JOIN informacion_general ig
+        ON 
+            ig.id = ph.id
+        WHERE 
+            ph.id = {index} AND ph.estado = 1
+        """
     )
 
+    prestamos = cursor.fetchall()
 
-def ranuras_disponibles(index: int, df) -> pd.DataFrame:
-    funct = lambda x: "✅" if x == "activo" else "🚨"
+    conexion.close()
 
-    estado_ranuras: list[str] = list(
-        map(funct, [df[f"p{i} estado"][index] for i in range(1, 16)])
-    )
-    dict_tabla: dict = {}
+    if len(prestamos) == 0:
+        return []
+    
+    result: list[list[pd.DataFrame]] = [
+        [
+            pd.DataFrame(
+                {
+                    "Codigo de prestamo": [i[0]],
+                    "Interes [.]%": [i[1]],
+                    "Intereses vencidos": [f"{i[2]:,}"],
+                    "Deuda": [f"{i[3]:,}"],
+                    "Deuda TOTAL": [f"{i[6]:,}"]
+                }
+            ), pd.DataFrame(
+                {
+                    "Fiadores": [i[4]],
+                    "Deudas con fiadores": [i[5]]
+                }
+            ), pd.DataFrame(
+                {
+                    "Fechas de pago": i[7].split("_")
+                }
+            )
+        ] for i in prestamos
+    ]
 
-    for i in range(1, 16):
-        dict_tabla[str(i)] = list(estado_ranuras[i - 1])
-
-    return pd.DataFrame(dict_tabla)
-
-
-def activar_ranura(index: int, df, ajustes: dict, ranura: str) -> None:
-    estado: str = f"p{ranura} estado"
-    prestamo: str = f"p{ranura} prestamo"
-    fechas: str = f"p{ranura} fechas de pago"
-
-    if df[estado][index] != "activo":
-        df.loc[index, estado] = "activo"
-        df.loc[index, prestamo] = "0_0_0_0_n_n"
-        df.loc[index, fechas] = "n"
-
-        df = df.loc[:, ~df.columns.str.contains("^Unnamed")]
-        df.to_csv(ajustes["nombre df"])
-        st.rerun()
-    else:
-        st.info("La ranura esta activa", icon="ℹ️")
+    return result
 
 
 def consultar_capital_disponible(index: int, ajustes: dict, df) -> tuple:
@@ -189,10 +188,10 @@ def hacer_carta_de_prestamo() -> None:
         "\n",
         "\n",
         "     _________________________                         _________________________\n",
-        "           usuario de el fondo                               tesorero",
+        "        usuario de el fondo                                    tesorero",
     ]
 
-    with open("text/carta_prestamo.txt", "w", encoding="utf-8") as f:
+    with open("src/text/carta_prestamo.txt", "w", encoding="utf-8") as f:
         f.write("".join(carta))
         f.close()
 

@@ -202,10 +202,41 @@ def increment(tabla: str, columna: str, index: int, incremento: int) -> None:
     conexion.close()
 
 
-def registo(incremento: int, ingeso: bool = True) -> None:
+def increment_str(tabla: str, columna: str, index: int, incremento: str) -> None:
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    cursor.execute(
+        f"""
+        SELECT {columna}
+        FROM {tabla}
+        WHERE id = {index}
+        """
+    )
+
+    valor = cursor.fetchall()[0][0]
+
+    if valor == "n":
+        valor = incremento
+    else:
+        valor += f"_{incremento}"
+
+    cursor.execute(
+        f"""
+        UPDATE {tabla}
+        SET {columna} = '{valor}'
+        WHERE id = {index}
+        """
+    )
+
+    conexion.commit()
+    conexion.close()
+
+
+def registo(incremento: int, is_ingeso: bool = True) -> None:
     fecha: str = datetime.datetime.now().strftime("%Y-%m-%d")
 
-    columna: str = "ingreso" if ingeso else "egreso"
+    columna: str = "ingreso" if is_ingeso else "egreso"
 
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
@@ -213,7 +244,7 @@ def registo(incremento: int, ingeso: bool = True) -> None:
     cursor.execute(
         f"""
         SELECT {columna}
-        FROM compilacion
+        FROM registros
         WHERE fecha = '{fecha}'
         """
     )
@@ -225,7 +256,7 @@ def registo(incremento: int, ingeso: bool = True) -> None:
 
     cursor.execute(
         f"""
-        UPDATE compilacion
+        UPDATE registros
         SET {columna} = {valor}
         WHERE fecha = '{fecha}'
         """

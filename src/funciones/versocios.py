@@ -79,42 +79,6 @@ def tabla_acuerdo() -> pd.DataFrame:
     return pd.DataFrame(resultado)
 
 
-def tabla_ranura() -> pd.DataFrame:
-    conexion = sql.connect("Fondo.db")
-    cursor = conexion.cursor()
-
-    cursor.execute(
-        """
-        SELECT
-            ig.id,
-            ig.nombre,
-            rp.p16_estado
-        From informacion_general ig
-        JOIN ranuras_p rp
-        ON
-            ig.id = rp.id
-        """
-    )
-
-    datos = cursor.fetchall()
-    conexion.close()
-
-    datos = list(zip(*datos))
-
-    datos[2] = map(
-        lambda x: "✅ libre" if bool(x) else "🚨 ocupada",
-        datos[2]
-    )
-
-    resultado = {
-        "Numero": datos[0],
-        "Nombre": datos[1],
-        "Ranura": datos[2]
-    }
-
-    return pd.DataFrame(resultado)
-
-
 def rectificar_numero(boleta_a_buscar: str, poscion_boleta: str) -> bool:
     if boleta_a_buscar == "":
         return False

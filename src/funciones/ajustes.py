@@ -1,9 +1,7 @@
-import src.funciones.prestamos as fp
 import src.funciones.general as fg
-import src.sql.conect as c_sql
 import streamlit as st
-import pandas as pd
 import sqlite3 as sql
+import pandas as pd
 import datetime
 import time
 
