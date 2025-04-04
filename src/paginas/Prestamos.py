@@ -9,7 +9,9 @@ ranura_actual: str = st.session_state.ranura_actual
 
 index: int = st.session_state.usuario_actual_prestamos
 
-index_de_usuario: int = st.sidebar.number_input("Numero de usuario: ", value=0, step=1)
+index_de_usuario: int = st.sidebar.number_input(
+    "Numero de usuario: ", value=0, step=1
+)
 
 if st.sidebar.button("Buscar"):
     estado = fp.abrir_usuario(index_de_usuario)

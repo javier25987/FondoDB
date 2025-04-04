@@ -57,35 +57,3 @@ def realizar_anotacion(
     df.to_csv(ajustes["nombre df"])
 
     return True, ""
-
-
-def modificar_anotacion(index: int, pos: int, new_elem: str, ajustes: dict, df):
-    # confiramcion permisos de administrador
-    if not st.session_state.admin:
-        return False, "Se necesitan permisos de administrador"
-
-    if "_" in new_elem:
-        return False, "El simbolo '_' no puede estar en la anotacion"
-    if "$" in new_elem:
-        return False, "El simbolo '$' no puede estar en la anotacion"
-    if ":" in new_elem:
-        return False, "El simbolo ':' no puede estar en la anotacion"
-
-    anotaciones: str = df["anotaciones generales"][index]
-    anotaciones: list[str] = anotaciones.split("_")
-
-    anotacion: str = anotaciones[pos]
-    monto: str = anotacion[anotacion.find(":") :]
-
-    if new_elem == "":
-        anotaciones[pos] = "n" + monto
-    else:
-        anotaciones[pos] = new_elem + monto
-
-    anotaciones = "_".join(anotaciones)
-    df.loc[index, "anotaciones generales"] = anotaciones
-
-    df = df.loc[:, ~df.columns.str.contains("^Unnamed")]
-    df.to_csv(ajustes["nombre df"])
-
-    return True, ""

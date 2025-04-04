@@ -47,12 +47,15 @@ if "nombre_para_busqueda" not in st.session_state:
 if "numero_buscar_boleta" not in st.session_state:
     st.session_state.numero_buscar_boleta = -1
 
+if "tabla_modificar" not in st.session_state:
+    st.session_state.tabla_modificar = {} 
+
 # paginas de usuario general
 paginas_generales: list = [
     st.Page("src/paginas/Menu.py", title="Menu", icon="🏠"),
     st.Page("src/paginas/Cuotas.py", title="Cuotas", icon="📆"),
     st.Page("src/paginas/Prestamos.py", title="Prestamos", icon="💵"),
-    st.Page("src/paginas/AnalisUsuarios.py", title="Analizar Ususarios", icon="📈"),
+    #st.Page("src/paginas/AnalisUsuarios.py", title="Analizar Ususarios", icon="📈"),
     st.Page("src/paginas/Transferencias.py", title="Transferencias", icon="🏛️"),
     st.Page("src/paginas/Rifas.py", title="Rifas", icon="🗒️"),
     st.Page("src/paginas/Anotaciones.py", title="Anotaciones", icon="📘"),
@@ -79,26 +82,22 @@ archivos_elementales: list = [
     st.Page("src/session/files.py", title="Crear Archivos", icon=":material/settings:")
 ]
 
-# revisar si existen los ajustes
-try:
-    with open("Fondo.db", "r") as f:
-        f.close()
-    st.session_state.db_exist = True
-except FileExistsError:
-    pass
-
 # diccionario de paginas que se van a mostrar
 dict_general: dict = {}
 
-# cargar las paginas a el diccionario
-if st.session_state.db_exist:
+# cargar las paginas al diccionario
+try: # revisar si existen la base de datos
+    with open("Fondo.db", "r") as f:
+        f.close()
+    
     dict_general["Paginas Generales"] = paginas_generales
 
     if st.session_state.admin:
         dict_general["Paginas Administrativas"] = paginas_de_adiministrador
     else:
         dict_general["Paginas Administrativas"] = ingresar_admin
-else:
+
+except FileExistsError: # proceso si no existe
     dict_general["Paginas Generales"] = archivos_elementales
 
 # cargar las paginas para la vista
