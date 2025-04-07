@@ -216,7 +216,7 @@ def increment_str(tabla: str, columna: str, index: int, incremento: str) -> None
 
     valor = cursor.fetchall()[0][0]
 
-    if valor == "n":
+    if valor == "n" or valor == "nan":
         valor = incremento
     else:
         valor += f"_{incremento}"

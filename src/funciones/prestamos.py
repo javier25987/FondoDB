@@ -151,14 +151,12 @@ def consultar_capital_disponible(index: int) -> tuple:
     datos = cursor.fetchall()
     conexion.close()
 
-    print(f"estos son los valores: {datos}")
-
     total_deudas = [0, 0]
     if datos[0][0] is not None and datos[0][1] is not None:
         total_deudas[0] = datos[0][0] 
         total_deudas[1] = datos[0][1]
 
-    total_disponible = capital_disponible - sum(total_deudas)
+    total_disponible = capital_disponible - sum(total_deudas) - deudas_por_fiador
 
     return (
         capital, capital_disponible, deudas_por_fiador, 
@@ -168,31 +166,43 @@ def consultar_capital_disponible(index: int) -> tuple:
 
 
 
-def consultar_capital_usuario(index: int, ajustes: dict, df) -> int:
-    capital: int = int(df["capital"][index])
-    capital_disponible: int = int(capital * ajustes["capital usable"] / 100)
+def consultar_capital_usuario(index: int) -> int:
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
 
-    deudas_por_fiador: int = int(df["deudas por fiador"][index])
-
-    deudas_en_prestamos: int = 0
-    deudas_por_intereses: int = 0
-
-    for i in range(1, 16):
-        if df[f"p{i} estado"][index] != "activo":
-            prestamo: list[str] = df[f"p{i} prestamo"][index].split("_")
-
-            deuda_prestamo: int = int(prestamo[3])
-            if deuda_prestamo > 0:
-                deudas_en_prestamos += deuda_prestamo
-
-            deuda_intereses: int = int(prestamo[1])
-            if deuda_intereses > 0:
-                deudas_por_intereses += deuda_intereses
-
-    capital_total: int = capital_disponible - (
-        deudas_por_fiador + deudas_en_prestamos + deudas_por_intereses
+    cursor.execute(
+        f"""
+        SELECT
+            (
+                (
+                    ig.capital * (
+                        SELECT a.valor_n
+                        FROM ajustes a
+                        WHERE a.ajuste = 'capital usable'
+                    )
+                ) - (
+                    (
+                        SELECT 
+                            SUM(ph.instereses_vencidos + ph.deuda)
+                        FROM prestamos_hechos ph
+                        WHERE 
+                            ph.id = {index} AND 
+                            ph.estado = 1
+                    ) + p.deudas_por_fiador
+                ) * 100
+            ) / 100
+        FROM informacion_general ig
+        JOIN prestamos p 
+        ON 
+            ig.id = p.id
+        WHERE ig.id = {index}
+        """
     )
-    return capital_total
+
+    dato = cursor.fetchall[0][0]
+    conexion.close()
+
+    return dato if dato is not None else 0
 
 
 def hacer_carta_de_prestamo() -> None:
@@ -258,8 +268,6 @@ def rectificar_viavilidad(
         )
         return True, ""
 
-    if df[f"p{ranura} estado"][index] != "activo":
-        return False, f"La ranura {ranura} no esta activa"
     if index in fiadores:
         return False, "Un usuario no puede ser su propio fiador"
     if len(fiadores) != len(set(fiadores)):

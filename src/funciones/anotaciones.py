@@ -1,59 +1,74 @@
+import src.sql.conect as c_sql
 import streamlit as st
 import datetime
 
 
-def ingresar_usuario(index: int, ajustes: dict, df) -> (bool, str):
-    if (0 > index) or (index >= ajustes["usuarios"]):
-        return False, "Numero de usuario fuera de rango"
+def abrir_usuario(index: int) -> (bool, str): # type: ignore
+    if 0 > index >= c_sql.obtener_ajuste("usuarios"):
+        return False, "El numero de usuario esta fuera de rango"
 
-    if df["estado"][index] != "activo":
-        return False, f"El usuario № {index} esta desactivado"
+    estado_usuario: bool = bool(
+        c_sql.obtener_ig("estado", index)
+    )
+    if not estado_usuario:
+        return False, f"El usuario № {index} no esta activo"
 
     return True, ""
 
 
-def realizar_anotacion(
-    index: int, anotacion: str, monto: int, motivo: str, ajustes: dict, df
-) -> tuple[bool, str]:
-    if "_" in anotacion:
-        return False, "El simbolo '_' no puede estar en la anotacion"
-    if "$" in anotacion:
-        return False, "El simbolo '$' no puede estar en la anotacion"
-    if ":" in anotacion:
-        return False, "El simbolo ':' no puede estar en la anotacion"
+def certificar_anotacion(
+        anotacion: str, motivo: str, monto: int
+) -> (bool, str): # type: ignore
+    
     if anotacion == "":
         return False, "La anotacion esta vacia"
 
+    if motivo in {"MULTA", "ACUERDO"} and monto <= 0:
+        return False, "No se puede hacer una anotacion con tal motivo y monto menor a cero"
+
+    simbolos: list[str, ...] = ["_", "$", "."] # type: ignore
+
+    for i in simbolos:
+        if i in anotacion:
+            return False, f"El simbolo '{i}' no puede estar en la anotacion"
+        
+    return True, ""
+
+
+
+def realizar_anotacion(
+    index: int, anotacion: str, monto: int, motivo: str
+) -> None:
+
     # sumatoria a "aporte a multas"
-    if (motivo != "GENERAL") and (monto > 0):
-        monto_de_aporte: int = df["aporte a multas"][index]
-        monto_de_aporte += monto
-        df.loc[index, "aporte a multas"] = monto_de_aporte
+    if motivo in {"MULTA", "ACUERDO"}:
+        c_sql.increment(
+            "informacion_general", "aporte_a_multas", index, monto
+        )
 
     # creacion de la anotacion
     anotacion: str = (
-        f"{motivo} -"
-        + f"{datetime.datetime.now().strftime('%Y/%m/%d - %H;%M')} "
+        f"[{datetime.datetime.now().strftime('%Y/%m/%d %H:%M')}] "
         + anotacion
-        + f": $ {monto}"
     )
 
+    if motivo != "GENERAL":
+        anotacion += f". $ {monto}"
+
     # escritura de la anotacion
-    anotaciones: str = df["anotaciones generales"][index]
-    if anotaciones == "n":
-        anotaciones = anotacion
-    else:
-        anotacion = "_" + anotacion
-        anotaciones += anotacion
-    df.loc[index, "anotaciones generales"] = anotaciones
+
+    columna_anotacion = motivo.lower()
+    c_sql.increment_str("anotaciones", columna_anotacion, index, anotacion)
 
     # escritura del valor
-    multas_actuales: int = df["multas extra"][index]
-    multas_actuales += monto
-    df.loc[index, "multas extra"] = multas_actuales
+    if motivo != "GENERAL":
+        c_sql.increment(
+            "informacion_general", "multas_extra", index, monto
+        )
 
-    # escritura de la tabla
-    df = df.loc[:, ~df.columns.str.contains("^Unnamed")]
-    df.to_csv(ajustes["nombre df"])
 
-    return True, ""
+def obtener_anotaciones(index: int, motivo: str) -> list[str, ...]: #type: ignore
+
+    anotaciones = c_sql.obtener_valor("anotaciones", motivo, index)
+
+    return anotaciones.split("_") if anotaciones != "n" else [] 

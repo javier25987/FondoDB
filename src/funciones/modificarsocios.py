@@ -68,7 +68,13 @@ def realizar_consulta(consulta: str, commit: bool) -> pd.DataFrame:
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
-    cursor.execute(consulta)
+    try:
+        cursor.execute(consulta)
+    except:
+        st.toast(
+            "🚨 Hay un error con el formato o valores en la consulta"
+        )
+        return {}
 
     datos = cursor.fetchall()
 

@@ -1,5 +1,5 @@
-import src.sql.conect as c_sql
 import src.funciones.cuotas as fc
+import src.sql.conect as c_sql
 import streamlit as st
 import os
 
@@ -17,7 +17,7 @@ if st.sidebar.button("Buscar"):
         st.session_state.usuario_cuotas = index_de_usuario
         st.rerun()
     else:
-        st.error(estado[1], icon="🚨")
+        st.toast(estado[1], icon="🚨")
 
 if index == -1:
     st.title("Usuario indeterminado")

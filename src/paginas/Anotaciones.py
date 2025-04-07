@@ -1,14 +1,14 @@
 import src.funciones.anotaciones as fa
-import src.funciones.general as fg
+import src.sql.conect as c_sql
 import streamlit as st
-import pandas as pd
+import time
 
 index: int = st.session_state.usuario_actual_anotaciones
 
 index_de_usuario: int = st.sidebar.number_input("Numero de usuario.", value=0, step=1)
 
 if st.sidebar.button("Buscar", key="00011"):
-    estado: (bool, str) = fa.ingresar_usuario(index_de_usuario) # type: ignore
+    estado: (bool, str) = fa.abrir_usuario(index_de_usuario) # type: ignore
     if estado[0]:
         st.session_state.usuario_actual_anotaciones = index_de_usuario
         st.rerun()
@@ -19,56 +19,52 @@ if index == -1:
     st.title("Usuario indeterminado")
     st.stop()
 
-st.title(f"№ {index} - {df['nombre'][index].title()}")
+st.title(
+    f"№ {index} - {c_sql.obtener_ig("nombre", index).title()}"
+)
 
 st.subheader("Realizar una anotacion:")
 
-cols_1: st.columns = st.columns([0.8, 0.2]) # type: ignore
-with cols_1[0]:
-    anotacion: str = st.text_input("Nueva anotacion:")
-with cols_1[1]:
-    motivo: str = st.selectbox(
-        "Motivo de la anotacion:", ("GENERAL", "MULTA", "ACUERDO")
-    )
+anotacion: str = st.text_input("Nueva anotacion:")
 
-cols_2: st.columns = st.columns([0.5, 0.2, 0.3], vertical_alignment="bottom") # type: ignore
+cols_2: st.columns = st.columns([5, 3, 2], vertical_alignment="bottom") # type: ignore
+
 with cols_2[0]:
     monto_anotacion: int = st.number_input("Monto de la anotacion:", value=0, step=1)
+
 with cols_2[1]:
+    motivo: str = st.selectbox(
+        "Motivo de la anotacion:", ("GENERAL", "MONETARIA", "MULTA", "ACUERDO")
+    )
+
+with cols_2[2]:
     if st.button("Realizar anotacion"):
-        estado_anotacion: (bool, str) = fa.realizar_anotacion( # type: ignore
-            index, anotacion, monto_anotacion, motivo, ajustes, df
+        estado_anotacion: (bool, str) = fa.certificar_anotacion( # type: ignore
+            anotacion, motivo, monto_anotacion
         )
         if estado_anotacion[0]:
+            fa.realizar_anotacion(index, anotacion, monto_anotacion, motivo)
+            st.toast("Anotacion hecha", icon="✅")
+            time.sleep(1)
             st.rerun()
         else:
             st.toast(estado_anotacion[1], icon="🚨")
-with cols_2[2]:
-    st.info("Para mas informacion lea abajo", icon="ℹ️")
+# with cols_2[2]:
+#     st.info("Para mas informacion lea abajo", icon="ℹ️")
 
 st.divider()
+
 st.subheader("Anotaciones hechas:")
 
-anotaciones: str = df["anotaciones generales"][index].split("_")
+deuda_actual: int = c_sql.obtener_ig("multas_extra", index)
 
-count: int = 0
-for i in anotaciones:
-    st.markdown(f"> **№ {count}:** {i}")
-    count += 1
-
-st.markdown(f"> ##### Total de anotaciones: {df['multas extra'][index]:,}")
-st.divider()
 st.markdown(
-    """
-    > ℹ️ NOTA: este apartado esta hecho para:
-    > * almacenar posibles deudas de un socio 
-    > * cargar multas al sistema
-    > * pagar el acuerdo de prestamos
-    >
-    > en el apartado de "motivo de la anotacion" se especifica esto,
-    > tenga en cuenta que los apartados de "MULTA" y "ACUERDO" suman
-    > a la columna de multas (a la ganancia final del fondo que se
-    > reparte entre todos) asi que si es una anotacion venidera que no 
-    > influye en las ganancias finales incluyala como "GENERAL".
-    """
+    f"> ##### Deuda en anotaciones: {deuda_actual:,}"
 )
+
+tabs = st.tabs(["Generales", "Monetarias", "Multas", "Acuerdos"])
+
+for i, j in zip(tabs, ("general", "monetaria", "multa", "acuerdo")):
+    with i:
+        for k in fa.obtener_anotaciones(index, j):
+            st.markdown(f"> {k}")

@@ -20,7 +20,7 @@ if st.sidebar.button("Buscar"):
         st.session_state.usuario_actual_prestamos = index_de_usuario
         st.rerun()
     else:
-        st.error(estado[1], icon="🚨")
+        st.toast(estado[1], icon="🚨")
 
 if index == -1:
     st.title("Usuario indeterminado")
@@ -63,22 +63,34 @@ with tab[0]:
         )
         
     if mostrar_opcion_pago:
-        st.write("aca se paga")
 
-        # if st.button("Pagar"):
-        #     if monto_a_pagar <= 0:
-        #         st.error("Desea pagar 0 o menos?", icon="🚨")
-        #     elif monto_a_pagar > tablas_ranura[4]:
-        #         st.error("No se puede pagar mas de lo que se debe", icon="🚨")
-        #     else:
-        #         fp.formato_de_abono(
-        #             index,
-        #             monto_a_pagar,
-        #             tablas_ranura[4],
-        #             ranura_actual,
-        #             ajustes,
-        #             df,
-        #         )
+        cols = st.columns([4, 4, 2], vertical_alignment="bottom")
+
+        with cols[0]:
+            monto_a_pagar: int = st.number_input(
+                "Monto a pagar:", value=0, step=1
+            )
+
+        with cols[1]:
+            codigo: int = st.selectbox(
+                "Codigo del prestamo:", (
+                    0, 1, 2, 3
+                )
+            )
+
+        with cols[2]:
+            if st.button("Pagar"):
+                if monto_a_pagar <= 0:
+                    st.error("Desea pagar 0 o menos?", icon="🚨")
+                elif monto_a_pagar > tablas_ranura[4]:
+                    st.error("No se puede pagar mas de lo que se debe", icon="🚨")
+                else:
+                    fp.formato_de_abono(
+                        index,
+                        monto_a_pagar,
+                        tablas_ranura[4],
+                        ranura_actual,
+                    )
 
 with tab[1]:
 

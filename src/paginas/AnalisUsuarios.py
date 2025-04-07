@@ -17,7 +17,7 @@ if st.sidebar.button("Buscar"):
         st.session_state.usuario_actual_analis = index_de_usuario
         st.rerun()
     else:
-        st.error("Usuario fuera de rango", icon="🚨")
+        st.toast("Usuario fuera de rango", icon="🚨")
 
 tabs = st.tabs(["Informacion General", "Usuario En Concreto"])
 

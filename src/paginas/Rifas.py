@@ -42,7 +42,7 @@ for i, j in zip(tabs, rifas):
             with cols[1]:
                 st.header("Deudas en boletas:")
                 deuda_act: int = c_sql.obtener_rifas(f"r{j}_deudas", index)
-                st.write(f"Deudas en boletas: {'{:,}'.format(deuda_act)}")
+                st.write(f"Deudas en boletas: {deuda_act:,}")
                 n_pago: int = st.number_input(
                     "Pago por boletas:", step=1, value=0, key=f"key: {key}"
                 )
