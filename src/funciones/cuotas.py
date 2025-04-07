@@ -37,6 +37,8 @@ def rectificar_cuotas(index: int) -> None:
 
     if semanas_a_revisar > semanas_revisadas:
         multas: str = c_sql.obtener_cuotas("multas", index)
+        multas = multas_comp_str(multas)
+
         cobrar_multas: bool = bool(c_sql.obtener_ajuste("cobrar multas"))
         anular_usuarios: bool = bool(c_sql.obtener_ajuste("anular usuarios"))
         pagas: int = c_sql.obtener_cuotas("pagas", index)
@@ -51,7 +53,6 @@ def rectificar_cuotas(index: int) -> None:
             else:
                 break
 
-        c_sql.guardar_valor_t("cuotas", "multas", index, multas)
         c_sql.guardar_valor("cuotas", "adeudas", index, deudas)
         c_sql.guardar_valor("cuotas", "revisiones", index, semanas_a_revisar)
 
@@ -59,6 +60,9 @@ def rectificar_cuotas(index: int) -> None:
             c_sql.guardar_valor(
                 "informacion_general", "estado", index, 0
             )
+
+        multas = multas_str_comp(multas)
+        c_sql.guardar_valor_t("cuotas", "multas", index, multas)
 
 
 def contar_multas(comp: str) -> int:

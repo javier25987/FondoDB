@@ -3,21 +3,21 @@
 =    FONDO SAN JAVIER     =
 =                         =
 ===========================
-> Nombre:lorena  zamora 
-> Numero:1
+> Nombre:sandra vargas
+> Numero:27
 > Puestos:2
 ===========================
 > Multas pagadas:0
 > Valor multa:3,000
 > TOTAL multas:0
 ===========================
-> Cuotas pagadas:2
+> Cuotas pagadas:1
 > Valor cuota:10,000
-> TOTAL cuotas:40,000
+> TOTAL cuotas:20,000
 ===========================
 > Metodo de pago:Transf
-> Total pagado:40,000
+> Total pagado:20,000
 ===========================
-> Fecha:2025/04/01
-> Hora:15:56
+> Fecha:2025/04/08
+> Hora:00:53
 ===========================

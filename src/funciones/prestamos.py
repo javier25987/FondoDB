@@ -1,9 +1,10 @@
-import src.funciones.general as fg
+import src.funciones.anotaciones as fa
 import src.sql.conect as c_sql
-import sqlite3 as sql
 import streamlit as st
+import sqlite3 as sql
 import pandas as pd
 import datetime
+import time
 
 
 def abrir_usuario(index: int) -> (bool, str): # type: ignore
@@ -45,21 +46,21 @@ def crear_tablas_de_prestamos(index: int):
 
     if len(prestamos) == 0:
         return []
-    
-    result: list[list[pd.DataFrame]] = [
+
+    return [
         [
             pd.DataFrame(
                 {
                     "Codigo de prestamo": [i[0]],
-                    "Interes [.]%": [i[1]],
+                    "Interes [...]%": [i[1]],
                     "Intereses vencidos": [f"{i[2]:,}"],
                     "Deuda": [f"{i[3]:,}"],
                     "Deuda TOTAL": [f"{i[6]:,}"]
                 }
             ), pd.DataFrame(
                 {
-                    "Fiadores": [i[4]],
-                    "Deudas con fiadores": [i[5]]
+                    "Fiadores": i[4].split("#"),
+                    "Deudas con fiadores": i[5].split("#")
                 }
             ), pd.DataFrame(
                 {
@@ -68,8 +69,6 @@ def crear_tablas_de_prestamos(index: int):
             )
         ] for i in prestamos
     ]
-
-    return result
 
 
 def consultar_capital_disponible(index: int) -> tuple:
@@ -165,32 +164,35 @@ def consultar_capital_disponible(index: int) -> tuple:
     )
 
 
-
 def consultar_capital_usuario(index: int) -> int:
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
     cursor.execute(
         f"""
+        SELECT 
+            SUM(ph.instereses_vencidos + ph.deuda)
+        FROM prestamos_hechos ph
+        WHERE 
+            ph.id = {index} AND 
+            ph.estado = 1
+        """
+    )
+
+    deudas_en_prestamos: int  = cursor.fetchall()[0][0]
+    deudas_en_prestamos = deudas_en_prestamos if deudas_en_prestamos is not None \
+        else 0
+
+    cursor.execute(
+        f"""
         SELECT
             (
-                (
-                    ig.capital * (
-                        SELECT a.valor_n
-                        FROM ajustes a
-                        WHERE a.ajuste = 'capital usable'
-                    )
-                ) - (
-                    (
-                        SELECT 
-                            SUM(ph.instereses_vencidos + ph.deuda)
-                        FROM prestamos_hechos ph
-                        WHERE 
-                            ph.id = {index} AND 
-                            ph.estado = 1
-                    ) + p.deudas_por_fiador
-                ) * 100
-            ) / 100
+                ig.capital * (
+                    SELECT a.valor_n
+                    FROM ajustes a
+                    WHERE a.ajuste = 'capital usable'
+                )
+            ) / 100 - p.deudas_por_fiador
         FROM informacion_general ig
         JOIN prestamos p 
         ON 
@@ -199,7 +201,9 @@ def consultar_capital_usuario(index: int) -> int:
         """
     )
 
-    dato = cursor.fetchall[0][0]
+
+    dato = int(cursor.fetchall()[0][0]) - deudas_en_prestamos
+
     conexion.close()
 
     return dato if dato is not None else 0
@@ -257,11 +261,8 @@ def rectificar_viavilidad(
     
     # truco para saltarse toda la asuntos del prestamo
     if 1976 in fiadores:
-        nota_a_incluir: str = (
-            f"({datetime.datetime.now().strftime('%Y/%m/%d %H:%M')}) la"
-            f" revison para solicitud de un prestamo ha sido saltada"
-        )
-        realizar_anotacion(index, nota_a_incluir, ajustes, df)
+        nota_a_incluir: str = "se ha saltado la revision de un prestamo"
+        fa.realizar_anotacion(index, nota_a_incluir, 0, "GENERAL")
         st.toast(
             "⚠️ ADVERTENCIA: se ha saltado la revision de viavilidad del "
             "prestamo LO QUE PASE YA ES SU CULPA"
@@ -273,12 +274,13 @@ def rectificar_viavilidad(
     if len(fiadores) != len(set(fiadores)):
         return False, "No se permiten fiadores repetidos"
 
-    capital_disponible: int = consultar_capital_usuario(index, ajustes, df)
     sum_deudas: int = sum(deudas_con_fiadores)
     if valor == 0:
-        return False, "Para que hacer un prestamo?"
+        return False, "Hay razon para hacer un prestamo?"
     if sum_deudas > valor:
         return False, "La deuda con fiadores supera el valor de el prestamo"
+
+    capital_disponible: int = consultar_capital_usuario(index)
 
     # rectificar para capital negativo o positivo
     if capital_disponible > 0:
@@ -296,18 +298,20 @@ def rectificar_viavilidad(
 
     count: int = 0
     for i in fiadores:
-        capital_de_fiador: int = consultar_capital_usuario(i, ajustes, df)
+        capital_de_fiador: int = consultar_capital_usuario(i)
         if capital_de_fiador < deudas_con_fiadores[count]:
             return False, f"El fiador con puesto №{i} no cuenta con el dinero"
-        if df["estado"][i] != "activo":
+        if not bool(c_sql.obtener_ig("estado", i)):
             return False, f"El fiador con puesto №{i} no esta activo"
         count += 1
 
     return True, ""
 
 
-def calendario_de_meses(fecha_de_cierre: str) -> str:
-    fecha_de_cierre: datetime = datetime.datetime(*map(int, fecha_de_cierre.split("/")))
+def calendario_de_meses() -> str:
+
+    fecha_de_cierre = c_sql.obtener_ajuste("fecha de cierre", False)
+    fecha_de_cierre: datetime = datetime.datetime(*map(int, fecha_de_cierre.split("-")))
     ahora: datetime = datetime.datetime.now()
     fechas: list = []
 
@@ -333,76 +337,64 @@ def calendario_de_meses(fecha_de_cierre: str) -> str:
 
 
 def escribir_prestamo(
-    index: int,
-    ranura: str,
-    valor: int,
-    ajustes: dict,
-    df,
-    fiadores: list[int] = list,
+    index: int, valor: int, fiadores: list[int] = list,
     deudas_fiadores: list[int] = list,
 ) -> None:
+    
     anotacion_final: str = (
-        f"( {datetime.datetime.now().strftime('%Y/%m/%d %H:%M')} )"
-        f" Se ha concedido un prestamo por {valor:,} (de) pesos, el "
-        f"prestamo esta almacenado en la ranura № {ranura} se cuenta "
-        f"como fiadores a ({','.join(map(str, fiadores))}) con deudas"
-        f" de ({','.join(map(str, deudas_fiadores))})."
+        f"Se ha concedido un prestamo por {valor:,} (de) pesos, "
+        f"se cuenta como fiadores a ({','.join(map(str, fiadores))})"
+        f" con deudas de ({','.join(map(str, deudas_fiadores))})."
     )
 
-    interes: int = ajustes["interes < tope"]
+    interes: int = c_sql.obtener_ajuste("interes m tope")
 
-    if valor > ajustes["tope de intereses"]:
-        interes = ajustes["interes > tope"]
+    if valor > c_sql.obtener_ajuste("tope intereses"):
+        interes = c_sql.obtener_ajuste("interes M tope")
 
-    intereses_vencidos: int = int(df["dinero por intereses vencidos"][index])
-    intereses_vencidos += int(valor * (interes / 100))
-    df.loc[index, "dinero por intereses vencidos"] = intereses_vencidos
+    valor_incrementar: int = int(valor * (interes / 100))
 
-    info_general: str = "_".join(
-        (
-            str(interes),
-            "0",
-            "0",
-            str(valor),
-            "#".join(map(str, fiadores)) if fiadores else "n",
-            "#".join(map(str, deudas_fiadores)) if deudas_fiadores else "n",
+    c_sql.increment(
+        "prestamos", "dinero_por_intereses", index, valor_incrementar
+    )
+
+    for i, j in zip(fiadores, deudas_fiadores):
+        if i != 1976:
+            c_sql.increment("prestamos", "deudas_por_fiador", i, j)
+            c_sql.increment_str("prestamos", "fiador_de", i, str(index))
+
+    c_sql.increment("prestamos", "prestamos_hechos", index, 1)
+    c_sql.increment("prestamos", "dinero_en_prestamos", index, valor)
+
+    dinero_por_si = valor - sum(deudas_fiadores)
+    c_sql.increment("prestamos", "dinero_por_si_mismo", index, dinero_por_si)
+
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    fiadores = "#".join(map(str, fiadores)) if fiadores else "n"
+    deudas_fiadores = "#".join(map(str, deudas_fiadores)) if deudas_fiadores else "n"
+    calendario = calendario_de_meses()
+
+    cursor.execute(
+        """
+        INSERT INTO prestamos_hechos (
+            id, estado, interes, instereses_vencidos,
+            revisiones, deuda, fiadores,
+            deuda_con_fiadores, fechas_de_pago, 
+            cargar_intereses
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """, (
+            index, 1, interes, 0, 0, valor, fiadores, 
+            deudas_fiadores, calendario, 0
         )
     )
-    count: int = 0
-    for i in fiadores:
-        if i != 1976:
-            deudas_de_el_fiador: int = int(df["deudas por fiador"][i])
-            deudas_de_el_fiador += deudas_fiadores[count]
-            df.loc[i, "deudas por fiador"] = deudas_de_el_fiador
 
-            fiador_de: str = df["fiador de"][i]
-            if fiador_de == "n":
-                fiador_de = str(index)
-            else:
-                fiador_de += f"_{index}"
-            df.loc[i, "fiador de"] = fiador_de
+    conexion.commit()
+    conexion.close()
 
-        count += 1
-
-    prestamos_hechos: int = int(df["prestamos hechos"][index])
-    prestamos_hechos += 1
-    df.loc[index, "prestamos hechos"] = prestamos_hechos
-
-    dinero_en_prestamos: int = int(df["dinero en prestamos"][index])
-    dinero_en_prestamos += valor
-    df.loc[index, "dinero en prestamos"] = dinero_en_prestamos
-
-    dinero_por_si: int = int(df["dinero por si mismo"][index])
-    dinero_por_si += valor - sum(fiadores)
-    df.loc[index, "dinero por si mismo"] = dinero_por_si
-
-    df.loc[index, f"p{ranura} estado"] = "no activo"
-    df.loc[index, f"p{ranura} prestamo"] = info_general
-    df.loc[index, f"p{ranura} fechas de pago"] = calendario_de_meses(
-        ajustes["fecha de cierre"]
-    )
-
-    realizar_anotacion(index, anotacion_final, ajustes, df)
+    fa.realizar_anotacion(index, anotacion_final, 0, "GENERAL")
 
 
 @st.dialog("Formulario de prestamo")
@@ -411,18 +403,17 @@ def formulario_de_prestamo(
     deudas_fiadores: list[int] = list,
 ) -> None:
     
-    st.header(f"№ {index}: {df['nombre'][index].title()}")
+    st.header(f"№ {index}: {c_sql.obtener_ig("nombre", index).title()}")
     st.divider()
 
     st.subheader(f"Valor de el prestamo: {valor:,}")
-    st.subheader(f"Guardar en la ranura: {ranura}")
 
     st.table(
         pd.DataFrame(
             {
                 "Fiadores": fiadores,
                 "Deudas con fiadores": list(
-                    map(lambda x: "{:,}".format(x), deudas_fiadores)
+                    map(lambda x: f"{x:,}", deudas_fiadores)
                 ),
             }
         )
@@ -430,10 +421,13 @@ def formulario_de_prestamo(
     st.divider()
 
     if st.button("Realizar prestamo", key="BotonNoSe"):
-        escribir_prestamo(index, ranura, valor, ajustes, df, fiadores, deudas_fiadores)
+        escribir_prestamo(index, valor, fiadores, deudas_fiadores)
+        st.toast("Anotacion hecha", icon="✅")
+        time.sleep(1)
         st.rerun()
 
-def pagar_un_prestamo(index: int, ranura: str, monto: int, ajustes: dict, df):
+
+def pagar_un_prestamo(index: int, monto: int, codigo: int):
     monto_nota: int = monto
 
     name: str = f"p{ranura} prestamo"
@@ -507,7 +501,7 @@ def formato_de_abono(
     st.table(
         {
             "Concepto": ["Deuda actual", "Monto a pagar"],
-            "Valor": ["{:,}".format(deuda), "{:,}".format(monto)],
+            "Valor": [f"{deuda:,}", f"{monto:,}"],
         }
     )
 
@@ -516,48 +510,29 @@ def formato_de_abono(
 
     st.divider()
     if st.button("Pagar", key="que haces aca?"):
-        pagar_un_prestamo(index, ranura, monto, ajustes, df)
+        pagar_un_prestamo(index, monto)
         st.rerun()
 
 
-def arreglar_asuntos(index: int) -> None:
-    ranuras: list[str] = list(map(str, range(1, 17)))
+def obtener_codigos(index: int) -> list[int, ...]: # type: ignore
 
-    guardar: bool = False
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
 
-    for i in ranuras:
-        if df[f"p{i} estado"][index] != "activo":
-            prestamo: list[str] = df[f"p{i} prestamo"][index].split("_")
-            fechas: str = df[f"p{i} fechas de pago"][index]
+    cursor.execute(
+        f"""
+        SELECT 
+            ph.codigo
+        FROM prestamos_hechos ph 
+        WHERE 
+            ph.id = {index} AND ph.estado = 1
+        """
+    )
 
-            fecha_actual = datetime.datetime.now()
+    datos = cursor.fetchall()
+    conexion.close()
 
-            fechas_pasadas: int = sum(
-                map(
-                    lambda x: x < fecha_actual,
-                    map(fg.string_a_fecha, fechas.split("_")),
-                )
-            )
+    if len(datos) == 0:
+        return []
 
-            revisiones: int = int(prestamo[2])
-
-            if fechas_pasadas > revisiones:
-                intereses: int = int(prestamo[1])
-                interes: float = int(prestamo[0]) / 100
-                deuda: int = int(prestamo[3])
-
-                for _ in range(fechas_pasadas - revisiones):
-                    intereses += (deuda + intereses) * interes
-
-                revisiones = fechas_pasadas
-
-                prestamo[2] = str(revisiones)
-                prestamo[1] = str(int(intereses))
-
-                df.loc[index, f"p{i} prestamo"] = "_".join(prestamo)
-
-                guardar = True
-
-    if guardar:
-        df = df.loc[:, ~df.columns.str.contains("^Unnamed")]
-        df.to_csv(ajustes["nombre df"])
+    return [i[0] for i in datos]

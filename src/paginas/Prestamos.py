@@ -73,9 +73,8 @@ with tab[0]:
 
         with cols[1]:
             codigo: int = st.selectbox(
-                "Codigo del prestamo:", (
-                    0, 1, 2, 3
-                )
+                "Codigo del prestamo:", 
+                fp.obtener_codigos(index)
             )
 
         with cols[2]:

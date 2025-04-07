@@ -48,4 +48,4 @@ def advertencia():
         " ingresar como administrador, de lo contrario no sera"
         " posible."
     )
-    st.page_link("session/login.py", label="Ingresar", icon=":material/login:")
+    st.page_link("src/session/login.py", label="Ingresar", icon=":material/login:")
