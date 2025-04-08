@@ -1,8 +1,7 @@
-import src.funciones.general as fg
 import src.funciones.cuotas as fc
 import src.sql.conect as c_sql
+import sqlite3 as sql
 from tqdm import tqdm
-import pandas as pd
 import datetime
 
 
@@ -53,7 +52,8 @@ def rectificar_todo() -> None:
 
         # cargamos datos
 
-        ranuras: list[str] = list(map(str, range(1, 17)))
+        conexion = sql.connect("Fondo.db")
+        cursor = conexion.cursor()
 
         calendario: list[datetime.datetime] = list(
             map(
@@ -74,6 +74,7 @@ def rectificar_todo() -> None:
         cobrar_multas: bool = bool(c_sql.obtener_ajuste("cobrar multas"))
         anular_usuarios: bool = bool(c_sql.obtener_ajuste("anular usuarios"))
 
+        print("Rectificando multas")
         for index in tqdm(range(c_sql.obtener_ajuste("usuarios"))):  # iteramos sobre todos los usuarios
 
             # rectificamos para cuotas
@@ -102,34 +103,51 @@ def rectificar_todo() -> None:
                         "informacion_general", "estado", index, 0
                     )
 
-            for i in ranuras:  # iteramos sobre prestamos hechos
-                if df[f"p{i} estado"][index] != "activo":
-                    prestamo: list[str] = df[f"p{i} prestamo"][index].split("_")
-                    fechas: str = df[f"p{i} fechas de pago"][index]
+        # revisamos para todos los prestamos
+        cursor.execute(
+            f"""
+            SELECT 
+                ph.codigo, 
+                ph.fechas_de_pago, 
+                ph.revisiones
+            FROM prestamos_hechos ph 
+            WHERE ph.estado = 1 
+            """
+        )
 
-                    fechas_pasadas: int = sum(
-                        map(
-                            lambda x: x < fecha_actual,
-                            map(fg.string_a_fecha, fechas.split("_")),
-                        )
+        datos = cursor.fetchall()
+
+        print("Rectificando prestamos")
+        for i, j, k in tqdm(datos):
+
+            fechas_pasadas: int = sum(
+                map(
+                    lambda x: x < fecha_actual,
+                    map(
+                        lambda y: datetime.datetime(*map(int, y.split("/"))), 
+                        j.split("_")
+                    ),
+                )
+            )
+
+            if fechas_pasadas > k:
+
+                for _ in range(fechas_pasadas - k):
+
+                    cursor.execute(
+                        f"""
+                        UPDATE prestamos_hechos
+                        SET 
+                            intereses_vencidos = intereses_vencidos + (
+                                (deuda + intereses_vencidos) * interes
+                            ) / 100,
+                            revisiones = {fechas_pasadas}
+                        WHERE codigo = {i}
+                        """
                     )
 
-                    revisiones: int = int(prestamo[2])
-
-                    if fechas_pasadas > revisiones:
-                        intereses: int = int(prestamo[1])
-                        interes: float = int(prestamo[0]) / 100
-                        deuda: int = int(prestamo[3])
-
-                        for _ in range(fechas_pasadas - revisiones):
-                            intereses += (deuda + intereses) * interes
-
-                        revisiones = fechas_pasadas
-
-                        prestamo[2] = str(revisiones)
-                        prestamo[1] = str(int(intereses))
-
-                        df.loc[index, f"p{i} prestamo"] = "_".join(prestamo)
+        conexion.commit()
+        conexion.close()
 
         cargar_ultimo_lunes()
         print("Proceso finalizado.")

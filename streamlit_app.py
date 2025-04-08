@@ -3,9 +3,9 @@ import src.asuntos.rectificado as a_r
 import streamlit as st
 
 # miramos si hay que rectificar
-# if "todo_rectificado" not in st.session_state:
-#     st.session_state.todo_rectificado = 1
-#     a_r.rectificar_todo()
+if "todo_rectificado" not in st.session_state:
+    st.session_state.todo_rectificado = 1
+    a_r.rectificar_todo()
 
 # configuracion de el tamanio de la pagina
 st.set_page_config(layout="wide")

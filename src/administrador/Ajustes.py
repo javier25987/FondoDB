@@ -11,17 +11,13 @@ st.title("Ajustes")
 tab = list(
     st.tabs(
         [
-            "Calendario",
-            "Cuotas y multas",
-            "Contraseñas",
-            "Prestamos",
-            "Usuarios",
-            "Fechas",
-            "Guardado de datos",
-            "Rifas"
+            "Calendario", "Cuotas y multas", "Contraseñas",
+            "Prestamos", "Usuarios", "Fechas",
+            "Guardado de datos", "Rifas"
         ]
     )
 )
+
 key: int = 1
 
 with tab[0]:

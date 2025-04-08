@@ -16,6 +16,8 @@ def abrir_usuario(index: int) -> (bool, str): # type: ignore
     )
     if not estado_usuario:
         return False, f"El usuario № {index} no esta activo"
+    
+    arreglar_asuntos(index)
 
     return True, ""
 
@@ -473,6 +475,8 @@ def pagar_un_prestamo(index: int, monto: int, codigo: int):
             monto = 0
 
     if monto <= 0:
+        conexion.commit()
+        conexion.close()
         return None
 
     # pago de fiadores
@@ -616,3 +620,60 @@ def rectificar_pago(codigo: int, monto: int) -> (bool, str): #type: ignore
         return False, "No se puede pagar mas de lo que se debe"
     
     return True, ""
+
+
+def arreglar_asuntos(index: int) -> None:
+
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    cursor.execute(
+        f"""
+        SELECT 
+            ph.codigo, 
+            ph.fechas_de_pago, 
+            ph.revisiones
+        FROM prestamos_hechos ph 
+        WHERE ph.id = {index} AND ph.estado = 1 
+        """
+    )
+
+    datos = cursor.fetchall()
+
+    if len(datos) == 0:
+        conexion.close()
+        return None
+    
+
+    fecha_actual = datetime.datetime.now()
+
+    for i, j, k in datos:
+
+        fechas_pasadas: int = sum(
+            map(
+                lambda x: x < fecha_actual,
+                map(
+                    lambda y: datetime.datetime(*map(int, y.split("/"))), 
+                    j.split("_")
+                ),
+            )
+        )
+
+        if fechas_pasadas > k:
+
+            for _ in range(fechas_pasadas - k):
+
+                cursor.execute(
+                    f"""
+                    UPDATE prestamos_hechos
+                    SET 
+                        intereses_vencidos = intereses_vencidos + (
+                            (deuda + intereses_vencidos) * interes
+                        ) / 100,
+                        revisiones = {fechas_pasadas}
+                    WHERE codigo = {i}
+                    """
+                )
+
+    conexion.commit()
+    conexion.close()
