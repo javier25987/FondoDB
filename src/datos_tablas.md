@@ -59,7 +59,7 @@
 | id                  | INTEGER                           |
 | estado              | BOOLEAN NOT NULL                  |
 | interes             | INTEGER                           |
-| instereses_vencidos | INTEGER                           |
+| intereses_vencidos  | INTEGER                           |
 | revisiones          | INTEGER                           |
 | deuda               | INTEGER                           |
 | fiadores            | TEXT NOT NULL                     |

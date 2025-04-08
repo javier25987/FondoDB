@@ -27,9 +27,9 @@ def crear_tablas_de_prestamos(index: int):
     cursor.execute(
         f"""
         SELECT 
-            ph.codigo, ph.interes, ph.instereses_vencidos,
+            ph.codigo, ph.interes, ph.intereses_vencidos,
             ph.deuda, ph.fiadores,  ph.deuda_con_fiadores, 
-            (ph.instereses_vencidos + ph.deuda),
+            (ph.intereses_vencidos + ph.deuda),
             ph.fechas_de_pago
         FROM prestamos_hechos ph 
         JOIN informacion_general ig
@@ -112,12 +112,12 @@ def consultar_capital_disponible(index: int) -> tuple:
     cursor.execute(
         f"""
         SELECT 
-            ph.codigo, ph.instereses_vencidos 
+            ph.codigo, ph.intereses_vencidos 
         FROM prestamos_hechos ph
         WHERE 
             ph.id = {index} AND 
             ph.estado = 1 AND 
-            ph.instereses_vencidos > 0
+            ph.intereses_vencidos > 0
         """
     )
 
@@ -140,7 +140,7 @@ def consultar_capital_disponible(index: int) -> tuple:
         f"""
         SELECT 
             SUM(ph.deuda), 
-            SUM(ph.instereses_vencidos)
+            SUM(ph.intereses_vencidos)
         FROM prestamos_hechos ph
         WHERE 
             ph.id = {index} AND ph.estado = 1
@@ -171,7 +171,7 @@ def consultar_capital_usuario(index: int) -> int:
     cursor.execute(
         f"""
         SELECT 
-            SUM(ph.instereses_vencidos + ph.deuda)
+            SUM(ph.intereses_vencidos + ph.deuda)
         FROM prestamos_hechos ph
         WHERE 
             ph.id = {index} AND 
@@ -379,7 +379,7 @@ def escribir_prestamo(
     cursor.execute(
         """
         INSERT INTO prestamos_hechos (
-            id, estado, interes, instereses_vencidos,
+            id, estado, interes, intereses_vencidos,
             revisiones, deuda, fiadores,
             deuda_con_fiadores, fechas_de_pago, 
             cargar_intereses
@@ -428,74 +428,142 @@ def formulario_de_prestamo(
 
 
 def pagar_un_prestamo(index: int, monto: int, codigo: int):
-    monto_nota: int = monto
 
-    name: str = f"p{ranura} prestamo"
-    info_prestamo: list[str] = df[name][index].split("_")
+    anotacion: str = f"se ha pagado {monto:,} al prestamo numero {codigo}"
 
-    intereses: int = int(info_prestamo[1])
-    deuda: int = int(info_prestamo[3])
+    # obtener datos
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
 
-    deuda_con_fiadores: list[int] = (
-        list(map(int, info_prestamo[5].split("#")))
-        if info_prestamo[5] != "n"
-        else ["n"]
+    cursor.execute(
+        f"""
+        SELECT
+            ph.intereses_vencidos, ph.deuda, 
+            ph.fiadores, ph.deuda_con_fiadores
+        FROM prestamos_hechos ph
+        WHERE ph.codigo = {codigo}
+        """
     )
 
     # pago de intereses
-    if intereses > 0:
-        intereses_pagados: int = int(df["dinero por intereses vencidos"][index])
-
-        if intereses > monto:
-            intereses -= monto
-
-            df.loc[index, "dinero por intereses vencidos"] = monto + intereses_pagados
-
-            monto = 0
-        else:
-            monto -= intereses
-
-            df.loc[index, "dinero por intereses vencidos"] = (
-                intereses + intereses_pagados
+    intereses_vencidos, deuda, fiadores, deuda_con_fiadores = \
+        cursor.fetchall()[0]
+    
+    if intereses_vencidos > 0:
+        if monto > intereses_vencidos:
+            cursor.execute(
+                f"""
+                UPDATE prestamos_hechos 
+                SET intereses_vencidos = 0
+                WHERE codigo = {codigo}
+                """
             )
 
-            intereses = 0
+            monto -= intereses_vencidos
 
+        else:
+            cursor.execute(
+                f"""
+                UPDATE prestamos_hechos 
+                SET intereses_vencidos = {intereses_vencidos - monto}
+                WHERE codigo = {codigo}
+                """
+            )
+
+            monto = 0
+
+    if monto <= 0:
+        return None
+
+    # pago de fiadores
+    monto_pago = monto
+
+    if fiadores not in {"n", "1976"}:
+        fiadores = list(map(int, fiadores.split("#")))
+        deuda_con_fiadores = list(map(int, deuda_con_fiadores.split("#")))
+        descuento: int = 0
+
+        for i, j in enumerate(fiadores):
+            if j != 1976:
+                if deuda_con_fiadores[i] > monto_pago:
+                    descuento = -monto_pago
+                    deuda_con_fiadores[i] -= monto_pago
+                    monto_pago = 0
+                else:
+                    descuento = -deuda_con_fiadores[i]
+                    deuda_con_fiadores[i] = 0
+                    monto_pago += descuento
+
+                c_sql.increment("prestamos", "deudas_por_fiador", j, descuento)
+
+        fiadores = "#".join(map(str, fiadores))
+        deuda_con_fiadores = "#".join(map(str, deuda_con_fiadores))
+
+        cursor.execute(
+            f"""
+            UPDATE prestamos_hechos 
+            SET 
+                fiadores = '{fiadores}', 
+                deuda_con_fiadores = '{deuda_con_fiadores}'
+            WHERE codigo = {codigo}
+            """
+        )
+        
     # pago de deuda
-    deuda -= monto
-
-    # pago a fiadores
-    if "n" not in deuda_con_fiadores:
-        for i in range(len(deuda_con_fiadores)):
-            if monto <= 0:
-                break
-
-            if deuda_con_fiadores[i] > monto:
-                deuda_con_fiadores[i] -= monto
-                monto = 0
-            else:
-                monto -= deuda_con_fiadores[i]
-                deuda_con_fiadores[i] = 0
-
-        deuda_con_fiadores = list(map(str, deuda_con_fiadores))
-
-    info_prestamo[1] = str(intereses)
-    info_prestamo[3] = str(deuda)
-    info_prestamo[5] = "#".join(deuda_con_fiadores)
-
-    df.loc[index, name] = "_".join(info_prestamo)
-
-    anotacion: str = (
-        f"( {datetime.datetime.now().strftime('%Y/%m/%d - %H:%M')}"
-        f" ) Se pago {monto_nota:,} pesos al prestamo vigente en la "
-        f"ranura № {ranura}."
+    cursor.execute(
+        f"""
+        UPDATE prestamos_hechos
+        SET 
+            deuda = deuda + {-monto}
+        WHERE codigo = {codigo}
+        """
     )
 
+    # rectificar inactividad
+    cursor.execute(
+        f"""
+        UPDATE prestamos_hechos 
+        SET 
+            estado = 0
+        WHERE 
+            codigo = {codigo} AND
+            (intereses_vencidos + deuda) <= 0
+        """
+    )
+
+    conexion.commit()
+    conexion.close()
+
+    # hacer anotacion
+    fa.realizar_anotacion(index, anotacion, 0, "GENERAL")
+
+
+def obtener_deuda_total(codigo: int) -> int:
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    cursor.execute(
+        f"""
+        SELECT
+            (ph.intereses_vencidos + ph.deuda)
+        FROM prestamos_hechos ph
+        WHERE ph.codigo = {codigo}
+        """
+    )
+
+    dato = cursor.fetchall()[0][0]
+    conexion.close()
+
+    return dato
+    
 
 @st.dialog("Pago de prestamo")
 def formato_de_abono(
-    index: int, monto: int, deuda: int, ranura: str, ajustes: dict, df
+    index: int, monto: int, codigo: int
 ):
+    
+    deuda: int = obtener_deuda_total(codigo)
+    
     st.divider()
     st.subheader("Conceptos de pago:")
     st.table(
@@ -505,12 +573,12 @@ def formato_de_abono(
         }
     )
 
-    st.subheader("Deuda despues de el pago:")
+    st.subheader("Deuda despues del pago:")
     st.markdown(f"### *{deuda - monto:,}*")
 
     st.divider()
     if st.button("Pagar", key="que haces aca?"):
-        pagar_un_prestamo(index, monto)
+        pagar_un_prestamo(index, monto, codigo)
         st.rerun()
 
 
@@ -536,3 +604,15 @@ def obtener_codigos(index: int) -> list[int, ...]: # type: ignore
         return []
 
     return [i[0] for i in datos]
+
+
+def rectificar_pago(codigo: int, monto: int) -> (bool, str): #type: ignore
+    deuda = obtener_deuda_total(codigo)
+
+    if monto <= 0:
+        return False, "No se puede pagar cero o menos"
+
+    if monto > deuda:
+        return False, "No se puede pagar mas de lo que se debe"
+    
+    return True, ""

@@ -79,17 +79,20 @@ with tab[0]:
 
         with cols[2]:
             if st.button("Pagar"):
-                if monto_a_pagar <= 0:
-                    st.error("Desea pagar 0 o menos?", icon="🚨")
-                elif monto_a_pagar > tablas_ranura[4]:
-                    st.error("No se puede pagar mas de lo que se debe", icon="🚨")
+                if st.session_state.admin:
+                    
+                    estado_pago: (bool, str) = fp.rectificar_pago( #type: ignore
+                        codigo, monto_a_pagar
+                    ) 
+
+                    if estado_pago[0]:
+                        st.balloons()
+                        fp.formato_de_abono(index, monto_a_pagar, codigo)
+                    else:
+                        st.toast(estado_pago[1], icon="🚨")
+
                 else:
-                    fp.formato_de_abono(
-                        index,
-                        monto_a_pagar,
-                        tablas_ranura[4],
-                        ranura_actual,
-                    )
+                    fg.advertencia()
 
 with tab[1]:
 
