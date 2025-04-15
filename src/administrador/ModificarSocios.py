@@ -38,7 +38,8 @@ with tabs[0]:
                 paso_2 = True
 
             if paso_1 and paso_2:
-                fm.menu_para_insertar_socio(nombre, puestos, telefono)
+                st.toast("Por ahora esta funcion no esta activa", icon="🚨")
+                #fm.menu_para_insertar_socio(nombre, puestos, telefono)
 
     with col1[1]:
         st.table(fm.mostrar_usuarios())

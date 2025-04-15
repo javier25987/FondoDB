@@ -427,13 +427,9 @@ with tab[7]:
             for i in range(1, r_numeros_por_boleta + 1):
                 premios.append(st.session_state[f"premio: {i}"])
             fa.cargar_datos_de_rifa(
-                r_rifa,
-                r_numero_de_boletas,
-                r_numeros_por_boleta,
-                r_boletas_por_talonario,
-                r_costo_de_boleta,
-                r_costos_de_administracion,
-                r_fecha_de_cierre,
+                r_rifa, r_numero_de_boletas, r_numeros_por_boleta,
+                r_boletas_por_talonario, r_costo_de_boleta,
+                r_costos_de_administracion, r_fecha_de_cierre,
                 premios,
             )
     st.divider()
@@ -458,11 +454,17 @@ with tab[7]:
             key += 1
 
     st.divider()
-    # st.header("Cerrar rifas:")
-    #
-    # for i, j in zip(st.columns(4), n_rifas):
-    #     with i:
-    #         st.subheader(f"Rifa {j}:")
-    #         if st.button("Cerrar rifa", key=f"key: {key}"):
-    #             fa.cerrar_una_rifa(j, ajustes)
-    #         key += 1
+    st.header("Cerrar rifas:")
+    
+    for i, j in zip(st.columns(4), n_rifas):
+        with i:
+            st.subheader(f"Rifa {j}:")
+            if st.button("Cerrar rifa", key=f"key: {key}"):
+                cerrar_rifa = fa.cerrar_una_rifa(j)
+
+                if cerrar_rifa[0]:
+                    st.toast(cerrar_rifa[1], icon="✅")
+                else:
+                    st.toast(cerrar_rifa[1], icon="🚨")
+                    
+            key += 1

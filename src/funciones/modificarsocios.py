@@ -14,6 +14,8 @@ def insertar_socios(
 
     nombre = nombre.lower()
 
+    
+
 
 @st.dialog("Añadir un nuevo usuario:")
 def menu_para_insertar_socio(

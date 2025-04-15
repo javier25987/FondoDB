@@ -13,9 +13,6 @@
 ## Deuda tecnica
 
 * algoritmo para identificar boletas repetidas (seccion de rifas)
-* hacer el sistema de anotaciones para pagos de boletas
-* hecer sistema de anotaciones para pagos en geneal
-* terminar: prestamos (pago y solicitar prestamo), modificar_socios (especificaciones sql), ajustes (cerrar rifas) 
 
 ## Secciones finalizadas
 

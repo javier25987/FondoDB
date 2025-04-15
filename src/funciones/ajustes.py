@@ -1,4 +1,6 @@
 import src.funciones.general as fg
+import src.funciones.prestamos as fp
+import src.sql.conect as c_sql
 import streamlit as st
 import sqlite3 as sql
 import pandas as pd
@@ -81,14 +83,9 @@ def crear_tablas_rifas(rifa: str) -> list:
 
 
 def cargar_datos_de_rifa(
-    rifa: str,
-    numero_de_boletas: int,
-    numeros_por_boleta: int,
-    boletas_por_talonario: int,
-    costo_de_boleta: int,
-    costo_de_administracion: int,
-    fecha_de_cierre,
-    premios: list[int],
+    rifa: str, numero_de_boletas: int, numeros_por_boleta: int,
+    boletas_por_talonario: int, costo_de_boleta: int,
+    costo_de_administracion: int, fecha_de_cierre, premios: list[int],
 ) -> None:
     suma_de_premios = sum(premios)
     ganancias_por_boleta = (numero_de_boletas * costo_de_boleta) - (
@@ -128,40 +125,57 @@ def cargar_datos_de_rifa(
 
 
 def cerrar_una_rifa(rifa: str):
+    """
+    aca estoy haciendo la rectificacion y el proceso de una en ves de usar 2 funciones
+    """
 
-    if ajustes[f"r{rifa} estado"]:
-        fecha_de_cierre = fg.string_a_fecha(ajustes[f"r{rifa} fecha de cierre"])
+    if not bool(c_sql.obtener_datos_rifas(rifa, "estado")):
+        return False, "La rifa no esta activa"
 
-        if fecha_de_cierre < datetime.datetime.now():
-            numeros = tuple(df["numero"])
-            nombres = tuple(df["nombre"])
-            deudas = tuple(df[f"r{rifa} deudas"])
+    fecha_de_cierre = fg.string_a_fecha(
+        c_sql.obtener_datos_rifas(rifa, "fecha_de_cierre")
+    )
+        
 
-            progres_text: str = "Rectificando deudas de usuarios ..."
-            func = lambda x: int(x * (100 / len(numeros)))
-            bar = st.progress(0, text=progres_text)
+    if fecha_de_cierre > datetime.datetime.now():
+        return False, "No se cumple la fecha de cierre"
+    
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
 
-            for i in range(len(nombres)):
-                if deudas[i] > 0:
-                    fp.escribir_prestamo(
-                        numeros[i], "16", deudas[i], ajustes, df, [], []
-                    )
-                    df.loc[numeros[i], f"r{rifa} deudas"] = 0
+    cursor.execute(
+        f"""
+        SELECT id, r{rifa}_deudas
+        FROM rifas
+        WHERE r{rifa}_deudas > 0
 
-                    st.toast(
-                        f"💵 Se genero un prestamo por {deudas[i]:,}"
-                        f"para el usuario № {numeros[i]}"
-                    )
-                    bar.progress(func(i), text=progres_text)
+        """
+    )
 
-            bar.empty()
-            ajustes[f"r{rifa} estado"] = False
+    datos = cursor.fetchall()
 
-            df = df.loc[:, ~df.columns.str.contains("^Unnamed")]
-            df.to_csv(ajustes["nombre df"])
+    for i in datos:
 
-            guardar_y_avisar(ajustes, rerun=False)
-        else:
-            st.error("No se cumple la fecha de cierre", icon="🚨")
-    else:
-        st.error("La rifa no esta activa", icon="🚨")
+        fp.escribir_prestamo(i[0], i[1], [], [])
+
+        st.toast(
+                f"💵 Se genero un prestamo por {i[1]:,}"
+                f"para el usuario № {i[0]}"
+            )
+        
+
+    cursor.execute(
+        f"""
+        UPDATE datos_de_rifas
+        SET estado = 0
+        WHERE id = 'r{rifa}'
+        """
+    )
+
+    conexion.commit()
+    conexion.close()
+
+    return True, "Rifa cerrada correctamente"
+        
+    
+
