@@ -72,7 +72,7 @@ def crear_tablas_rifas(rifa: str) -> list:
         pd.DataFrame(
             {
                 "Premios": map(
-                    lambda x: f"{int(x):,}" if x != "n" else x,
+                    lambda x: f"{int(x):,}" if x not in {"n", "", None} else x,
                     datos[4].split("_")
                 )
             }
@@ -127,41 +127,41 @@ def cargar_datos_de_rifa(
     st.rerun()
 
 
-# def cerrar_una_rifa(rifa: str):
-#
-#     if ajustes[f"r{rifa} estado"]:
-#         fecha_de_cierre = fg.string_a_fecha(ajustes[f"r{rifa} fecha de cierre"])
-#
-#         if fecha_de_cierre < datetime.datetime.now():
-#             numeros = tuple(df["numero"])
-#             nombres = tuple(df["nombre"])
-#             deudas = tuple(df[f"r{rifa} deudas"])
-#
-#             progres_text: str = "Rectificando deudas de usuarios ..."
-#             func = lambda x: int(x * (100 / len(numeros)))
-#             bar = st.progress(0, text=progres_text)
-#
-#             for i in range(len(nombres)):
-#                 if deudas[i] > 0:
-#                     fp.escribir_prestamo(
-#                         numeros[i], "16", deudas[i], ajustes, df, [], []
-#                     )
-#                     df.loc[numeros[i], f"r{rifa} deudas"] = 0
-#
-#                     st.toast(
-#                         f"💵 Se genero un prestamo por {deudas[i]:,}"
-#                         f"para el usuario № {numeros[i]}"
-#                     )
-#                     bar.progress(func(i), text=progres_text)
-#
-#             bar.empty()
-#             ajustes[f"r{rifa} estado"] = False
-#
-#             df = df.loc[:, ~df.columns.str.contains("^Unnamed")]
-#             df.to_csv(ajustes["nombre df"])
-#
-#             guardar_y_avisar(ajustes, rerun=False)
-#         else:
-#             st.error("No se cumple la fecha de cierre", icon="🚨")
-#     else:
-#         st.error("La rifa no esta activa", icon="🚨")
+def cerrar_una_rifa(rifa: str):
+
+    if ajustes[f"r{rifa} estado"]:
+        fecha_de_cierre = fg.string_a_fecha(ajustes[f"r{rifa} fecha de cierre"])
+
+        if fecha_de_cierre < datetime.datetime.now():
+            numeros = tuple(df["numero"])
+            nombres = tuple(df["nombre"])
+            deudas = tuple(df[f"r{rifa} deudas"])
+
+            progres_text: str = "Rectificando deudas de usuarios ..."
+            func = lambda x: int(x * (100 / len(numeros)))
+            bar = st.progress(0, text=progres_text)
+
+            for i in range(len(nombres)):
+                if deudas[i] > 0:
+                    fp.escribir_prestamo(
+                        numeros[i], "16", deudas[i], ajustes, df, [], []
+                    )
+                    df.loc[numeros[i], f"r{rifa} deudas"] = 0
+
+                    st.toast(
+                        f"💵 Se genero un prestamo por {deudas[i]:,}"
+                        f"para el usuario № {numeros[i]}"
+                    )
+                    bar.progress(func(i), text=progres_text)
+
+            bar.empty()
+            ajustes[f"r{rifa} estado"] = False
+
+            df = df.loc[:, ~df.columns.str.contains("^Unnamed")]
+            df.to_csv(ajustes["nombre df"])
+
+            guardar_y_avisar(ajustes, rerun=False)
+        else:
+            st.error("No se cumple la fecha de cierre", icon="🚨")
+    else:
+        st.error("La rifa no esta activa", icon="🚨")
