@@ -1,0 +1,23 @@
+===========================
+=                         =
+=    FONDO SAN JAVIER     =
+=                         =
+===========================
+> Nombre:fabio huertas ram
+> Numero:46
+> Puestos:3
+===========================
+> Multas pagadas:0
+> Valor multa:3,000
+> TOTAL multas:0
+===========================
+> Cuotas pagadas:1
+> Valor cuota:10,000
+> TOTAL cuotas:30,000
+===========================
+> Metodo de pago:Efect
+> Total pagado:30,000
+===========================
+> Fecha:2025/07/05
+> Hora:20:27
+===========================
