@@ -2,12 +2,11 @@ import src.funciones.prestamos as fp
 import src.funciones.general as fg
 import src.sql.conect as c_sql
 import streamlit as st
-import pandas as pd
 import os
 
 ranura_actual: str = st.session_state.ranura_actual
 
-index: int = st.session_state.usuario_actual_prestamos
+index: int = st.session_state.usuario
 
 index_de_usuario: int = st.sidebar.number_input(
     "Numero de usuario: ", value=0, step=1
@@ -17,7 +16,7 @@ if st.sidebar.button("Buscar"):
     estado = fp.abrir_usuario(index_de_usuario)
 
     if estado[0]:
-        st.session_state.usuario_actual_prestamos = index_de_usuario
+        st.session_state.usuario = index_de_usuario
         st.rerun()
     else:
         st.toast(estado[1], icon="🚨")
@@ -47,7 +46,7 @@ with tab[0]:
         with cols_t[0]:
             st.table(i)
             st.table(j)
-        
+
         with cols_t[1]:
             st.table(k)
 
@@ -61,7 +60,7 @@ with tab[0]:
             "No se han solicitado prestamos",
             icon="ℹ️"
         )
-        
+
     if mostrar_opcion_pago:
 
         cols = st.columns([4, 4, 2], vertical_alignment="bottom")
@@ -73,24 +72,22 @@ with tab[0]:
 
         with cols[1]:
             codigo: int = st.selectbox(
-                "Codigo del prestamo:", 
+                "Codigo del prestamo:",
                 fp.obtener_codigos(index)
             )
 
         with cols[2]:
             if st.button("Pagar"):
                 if st.session_state.admin:
-                    
                     estado_pago: (bool, str) = fp.rectificar_pago( #type: ignore
-                        codigo, monto_a_pagar
-                    ) 
+                        codigo, monto_a_pagar, index
+                    )
 
                     if estado_pago[0]:
                         st.balloons()
                         fp.formato_de_abono(index, monto_a_pagar, codigo)
                     else:
                         st.toast(estado_pago[1], icon="🚨")
-
                 else:
                     fg.advertencia()
 
@@ -140,6 +137,10 @@ with tab[1]:
 
     if st.button("Realizar prestamo"):
         if st.session_state.admin:
+
+            if not fg.rect_estado(index):
+                st.toast("El usuario no esta activo", icon="🚨")
+                st.stop()
 
             fiadores_prestamo: list[int] = []
             deudas_prestamo: list[int] = []

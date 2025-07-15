@@ -1,4 +1,5 @@
 import src.funciones.anotaciones as fa
+import src.funciones.general as fg
 import src.sql.conect as c_sql
 import streamlit as st
 import sqlite3 as sql
@@ -10,7 +11,7 @@ import time
 def abrir_usuario(index: int) -> (bool, str): # type: ignore
     if 0 > index >= c_sql.obtener_ajuste("usuarios"):
         return False, "El numero de usuario esta fuera de rango"
-    
+
     arreglar_asuntos(index)
 
     return True, ""
@@ -22,16 +23,16 @@ def crear_tablas_de_prestamos(index: int):
 
     cursor.execute(
         f"""
-        SELECT 
+        SELECT
             ph.codigo, ph.interes, ph.intereses_vencidos,
-            ph.deuda, ph.fiadores,  ph.deuda_con_fiadores, 
+            ph.deuda, ph.fiadores,  ph.deuda_con_fiadores,
             (ph.intereses_vencidos + ph.deuda),
             ph.fechas_de_pago
-        FROM prestamos_hechos ph 
+        FROM prestamos_hechos ph
         JOIN informacion_general ig
-        ON 
+        ON
             ig.id = ph.id
-        WHERE 
+        WHERE
             ph.id = {index} AND ph.estado = 1
         """
     )
@@ -82,10 +83,10 @@ def consultar_capital_disponible(index: int) -> tuple:
 
     cursor.execute(
         f"""
-        SELECT 
+        SELECT
             ph.codigo, ph.deuda
         FROM prestamos_hechos ph
-        WHERE 
+        WHERE
             ph.id = {index} AND ph.estado = 1
         """
     )
@@ -107,12 +108,12 @@ def consultar_capital_disponible(index: int) -> tuple:
 
     cursor.execute(
         f"""
-        SELECT 
-            ph.codigo, ph.intereses_vencidos 
+        SELECT
+            ph.codigo, ph.intereses_vencidos
         FROM prestamos_hechos ph
-        WHERE 
-            ph.id = {index} AND 
-            ph.estado = 1 AND 
+        WHERE
+            ph.id = {index} AND
+            ph.estado = 1 AND
             ph.intereses_vencidos > 0
         """
     )
@@ -130,15 +131,15 @@ def consultar_capital_disponible(index: int) -> tuple:
                 "Codigo del prestamo": datos[0],
                 "Deudas": datos[1]
             }
-        ) 
+        )
 
     cursor.execute(
         f"""
-        SELECT 
-            SUM(ph.deuda), 
+        SELECT
+            SUM(ph.deuda),
             SUM(ph.intereses_vencidos)
         FROM prestamos_hechos ph
-        WHERE 
+        WHERE
             ph.id = {index} AND ph.estado = 1
         """
     )
@@ -148,13 +149,13 @@ def consultar_capital_disponible(index: int) -> tuple:
 
     total_deudas = [0, 0]
     if datos[0][0] is not None and datos[0][1] is not None:
-        total_deudas[0] = datos[0][0] 
+        total_deudas[0] = datos[0][0]
         total_deudas[1] = datos[0][1]
 
     total_disponible = capital_disponible - sum(total_deudas) - deudas_por_fiador
 
     return (
-        capital, capital_disponible, deudas_por_fiador, 
+        capital, capital_disponible, deudas_por_fiador,
         fiador_de, tablas_deudas, tablas_intereses,
         total_disponible, total_deudas
     )
@@ -166,11 +167,11 @@ def consultar_capital_usuario(index: int) -> int:
 
     cursor.execute(
         f"""
-        SELECT 
+        SELECT
             SUM(ph.intereses_vencidos + ph.deuda)
         FROM prestamos_hechos ph
-        WHERE 
-            ph.id = {index} AND 
+        WHERE
+            ph.id = {index} AND
             ph.estado = 1
         """
     )
@@ -190,8 +191,8 @@ def consultar_capital_usuario(index: int) -> int:
                 )
             ) / 100 - p.deudas_por_fiador
         FROM informacion_general ig
-        JOIN prestamos p 
-        ON 
+        JOIN prestamos p
+        ON
             ig.id = p.id
         WHERE ig.id = {index}
         """
@@ -254,7 +255,7 @@ def rectificar_viavilidad(
     index: int, valor: int, fiadores: list[int] = list,
     deudas_con_fiadores: list[int] = list,
 ) -> (bool, str): # type: ignore
-    
+
     # truco para saltarse toda la asuntos del prestamo
     if 1976 in fiadores:
         nota_a_incluir: str = "se ha saltado la revision de un prestamo"
@@ -336,7 +337,7 @@ def escribir_prestamo(
     index: int, valor: int, fiadores: list[int] = list,
     deudas_fiadores: list[int] = list,
 ) -> None:
-    
+
     anotacion_final: str = (
         f"Se ha concedido un prestamo por {valor:,} (de) pesos, "
         f"se cuenta como fiadores a ({','.join(map(str, fiadores))})"
@@ -377,12 +378,12 @@ def escribir_prestamo(
         INSERT INTO prestamos_hechos (
             id, estado, interes, intereses_vencidos,
             revisiones, deuda, fiadores,
-            deuda_con_fiadores, fechas_de_pago, 
+            deuda_con_fiadores, fechas_de_pago,
             cargar_intereses
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            index, 1, interes, 0, 0, valor, fiadores, 
+            index, 1, interes, 0, 0, valor, fiadores,
             deudas_fiadores, calendario, 0
         )
     )
@@ -398,7 +399,7 @@ def formulario_de_prestamo(
     index: int, valor: int, fiadores: list[int] = list,
     deudas_fiadores: list[int] = list,
 ) -> None:
-    
+
     st.header(f"№ {index}: {c_sql.obtener_ig("nombre", index).title()}")
     st.divider()
 
@@ -434,7 +435,7 @@ def pagar_un_prestamo(index: int, monto: int, codigo: int):
     cursor.execute(
         f"""
         SELECT
-            ph.intereses_vencidos, ph.deuda, 
+            ph.intereses_vencidos, ph.deuda,
             ph.fiadores, ph.deuda_con_fiadores
         FROM prestamos_hechos ph
         WHERE ph.codigo = {codigo}
@@ -444,12 +445,12 @@ def pagar_un_prestamo(index: int, monto: int, codigo: int):
     # pago de intereses
     intereses_vencidos, deuda, fiadores, deuda_con_fiadores = \
         cursor.fetchall()[0]
-    
+
     if intereses_vencidos > 0:
         if monto > intereses_vencidos:
             cursor.execute(
                 f"""
-                UPDATE prestamos_hechos 
+                UPDATE prestamos_hechos
                 SET intereses_vencidos = 0
                 WHERE codigo = {codigo}
                 """
@@ -460,7 +461,7 @@ def pagar_un_prestamo(index: int, monto: int, codigo: int):
         else:
             cursor.execute(
                 f"""
-                UPDATE prestamos_hechos 
+                UPDATE prestamos_hechos
                 SET intereses_vencidos = {intereses_vencidos - monto}
                 WHERE codigo = {codigo}
                 """
@@ -475,7 +476,7 @@ def pagar_un_prestamo(index: int, monto: int, codigo: int):
 
     # pago de fiadores
     monto_pago = monto
-    
+
     index_1 = []
     index_2 = []
 
@@ -494,7 +495,7 @@ def pagar_un_prestamo(index: int, monto: int, codigo: int):
                     descuento = -deuda_con_fiadores[i]
                     deuda_con_fiadores[i] = 0
                     monto_pago += descuento
-                    
+
                 index_1.append(j)
                 index_2.append(descuento)
 
@@ -503,19 +504,19 @@ def pagar_un_prestamo(index: int, monto: int, codigo: int):
 
         cursor.execute(
             f"""
-            UPDATE prestamos_hechos 
-            SET 
-                fiadores = '{fiadores}', 
+            UPDATE prestamos_hechos
+            SET
+                fiadores = '{fiadores}',
                 deuda_con_fiadores = '{deuda_con_fiadores}'
             WHERE codigo = {codigo}
             """
         )
-        
+
     # pago de deuda
     cursor.execute(
         f"""
         UPDATE prestamos_hechos
-        SET 
+        SET
             deuda = deuda + {-monto}
         WHERE codigo = {codigo}
         """
@@ -524,10 +525,10 @@ def pagar_un_prestamo(index: int, monto: int, codigo: int):
     # rectificar inactividad
     cursor.execute(
         f"""
-        UPDATE prestamos_hechos 
-        SET 
+        UPDATE prestamos_hechos
+        SET
             estado = 0
-        WHERE 
+        WHERE
             codigo = {codigo} AND
             (intereses_vencidos + deuda) <= 0
         """
@@ -535,7 +536,7 @@ def pagar_un_prestamo(index: int, monto: int, codigo: int):
 
     conexion.commit()
     conexion.close()
-    
+
     for i, j in zip(index_1, index_2):
         c_sql.increment("prestamos", "deudas_por_fiador", i, j)
 
@@ -560,15 +561,15 @@ def obtener_deuda_total(codigo: int) -> int:
     conexion.close()
 
     return dato
-    
+
 
 @st.dialog("Pago de prestamo")
 def formato_de_abono(
     index: int, monto: int, codigo: int
 ):
-    
+
     deuda: int = obtener_deuda_total(codigo)
-    
+
     st.divider()
     st.subheader("Conceptos de pago:")
     st.table(
@@ -594,10 +595,10 @@ def obtener_codigos(index: int) -> list[int, ...]: # type: ignore
 
     cursor.execute(
         f"""
-        SELECT 
+        SELECT
             ph.codigo
-        FROM prestamos_hechos ph 
-        WHERE 
+        FROM prestamos_hechos ph
+        WHERE
             ph.id = {index} AND ph.estado = 1
         """
     )
@@ -611,7 +612,7 @@ def obtener_codigos(index: int) -> list[int, ...]: # type: ignore
     return [i[0] for i in datos]
 
 
-def rectificar_pago(codigo: int, monto: int) -> (bool, str): #type: ignore
+def rectificar_pago(codigo: int, monto: int, idx: int) -> (bool, str): #type: ignore
     deuda = obtener_deuda_total(codigo)
 
     if monto <= 0:
@@ -619,7 +620,10 @@ def rectificar_pago(codigo: int, monto: int) -> (bool, str): #type: ignore
 
     if monto > deuda:
         return False, "No se puede pagar mas de lo que se debe"
-    
+
+    if not fg.rect_estado(idx):
+        return False, "El usuario no esta activo"
+
     return True, ""
 
 
@@ -630,12 +634,12 @@ def arreglar_asuntos(index: int) -> None:
 
     cursor.execute(
         f"""
-        SELECT 
-            ph.codigo, 
-            ph.fechas_de_pago, 
+        SELECT
+            ph.codigo,
+            ph.fechas_de_pago,
             ph.revisiones
-        FROM prestamos_hechos ph 
-        WHERE ph.id = {index} AND ph.estado = 1 
+        FROM prestamos_hechos ph
+        WHERE ph.id = {index} AND ph.estado = 1
         """
     )
 
@@ -644,7 +648,7 @@ def arreglar_asuntos(index: int) -> None:
     if len(datos) == 0:
         conexion.close()
         return None
-    
+
 
     fecha_actual = datetime.datetime.now()
 
@@ -654,7 +658,7 @@ def arreglar_asuntos(index: int) -> None:
             map(
                 lambda x: x < fecha_actual,
                 map(
-                    lambda y: datetime.datetime(*map(int, y.split("/"))), 
+                    lambda y: datetime.datetime(*map(int, y.split("/"))),
                     j.split("_")
                 ),
             )
@@ -667,7 +671,7 @@ def arreglar_asuntos(index: int) -> None:
                 cursor.execute(
                     f"""
                     UPDATE prestamos_hechos
-                    SET 
+                    SET
                         intereses_vencidos = intereses_vencidos + (
                             deuda * interes
                         ) / 100,

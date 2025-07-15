@@ -2,17 +2,16 @@ import src.funciones.general as fg
 import src.sql.conect as c_sql
 import src.funciones.rifas as fr
 import streamlit as st
-import pandas as pd
 
 key: int = 0
 
-index = st.session_state.usuario_actual_rifas
+index = st.session_state.usuario
 
 index_de_usuario = st.sidebar.number_input("Numero de usuario:", value=0, step=1)
 if st.sidebar.button("Buscar"):
     estado: tuple[bool, str] = fr.abrir_usuario(index_de_usuario)
     if estado[0]:
-        st.session_state.usuario_actual_rifas = index_de_usuario
+        st.session_state.usuario = index_de_usuario
         st.rerun()
     else:
         st.error(estado[1], icon="🚨")
@@ -36,12 +35,17 @@ for i, j in zip(tabs, rifas):
             with cols[0]:
                 st.header("Entregar talonarios:")
                 if st.button("Entregar talonario", key=f"key: {key}"):
+
+                    if not fg.rect_estado(index):
+                        st.toast("El usuario no esta activo", icon="🚨")
+                        st.stop()
+
                     fr.cargar_talonario(index, j)
                 key += 1
 
             with cols[1]:
                 st.header("Deudas en boletas:")
-                deuda_act: int = c_sql.obtener_rifas(f"r{j}_deudas", index)
+                deuda_act = c_sql.obtener_rifas(f"r{j}_deudas", index)
                 st.write(f"Deudas en boletas: {deuda_act:,}")
                 n_pago: int = st.number_input(
                     "Pago por boletas:", step=1, value=0, key=f"key: {key}"
@@ -49,6 +53,10 @@ for i, j in zip(tabs, rifas):
                 key += 1
 
                 if st.button("Pagar", key=f"key: {key}"):
+                    if not fg.rect_estado(index):
+                        st.toast("El usuario no esta activo", icon="🚨")
+                        st.stop()
+
                     if deuda_act <= 0:
                         st.error("No entiendo que desea pagar", icon="🚨")
                     else:

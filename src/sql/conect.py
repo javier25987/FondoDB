@@ -2,7 +2,7 @@ import sqlite3 as sql
 import datetime
 
 
-def obtener_ig(colum: str, index: int) -> str | int:
+def obtener_ig(colum: str, index: int):
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
@@ -20,7 +20,7 @@ def obtener_ig(colum: str, index: int) -> str | int:
     return dato
 
 
-def obtener_cuotas(colum: str, index: int) -> str | int:
+def obtener_cuotas(colum: str, index: int):
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
@@ -38,7 +38,7 @@ def obtener_cuotas(colum: str, index: int) -> str | int:
     return dato
 
 
-def obtener_rifas(colum: str, index: int) -> str | int:
+def obtener_rifas(colum: str, index: int):
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
@@ -74,7 +74,7 @@ def obtener_prestamos(colum: str, index: int) -> str | int:
     return dato
 
 
-def obtener_ajuste(nombre: str, is_num: bool = True) -> str | int:
+def obtener_ajuste(nombre: str, is_num: bool = True):
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 

@@ -17,20 +17,8 @@ if "admin" not in st.session_state:
 if "db_exist" not in st.session_state:
     st.session_state.db_exist = False
 
-if "usuario_cuotas" not in st.session_state:
-    st.session_state.usuario_cuotas = -1
-
-if "usuario_actual_prestamos" not in st.session_state:
-    st.session_state.usuario_actual_prestamos = -1
-
-if "usuario_actual_anotaciones" not in st.session_state:
-    st.session_state.usuario_actual_anotaciones = -1
-
-if "usuario_actual_rifas" not in st.session_state:
-    st.session_state.usuario_actual_rifas = -1
-
-if "usuario_actual_analis" not in st.session_state:
-    st.session_state.usuario_actual_analis = -1
+if "usuario" not in st.session_state:
+    st.session_state.usuario = -1
 
 if "ranura_actual" not in st.session_state:
     st.session_state.ranura_actual = "1"
@@ -48,14 +36,15 @@ if "numero_buscar_boleta" not in st.session_state:
     st.session_state.numero_buscar_boleta = -1
 
 if "tabla_modificar" not in st.session_state:
-    st.session_state.tabla_modificar = {} 
+    st.session_state.tabla_modificar = {}
 
 # paginas de usuario general
 paginas_generales: list = [
     st.Page("src/paginas/Menu.py", title="Menu", icon="🏠"),
     st.Page("src/paginas/Cuotas.py", title="Cuotas", icon="📆"),
     st.Page("src/paginas/Prestamos.py", title="Prestamos", icon="💵"),
-    #st.Page("src/paginas/AnalisUsuarios.py", title="Analizar Ususarios", icon="📈"),
+    st.Page("src/paginas/AnalisUsuarios.py", title="Analizar Ususarios", icon="📈"),
+    st.Page("src/paginas/Apuntes.py", title="Apuntes", icon="📘"),
     st.Page("src/paginas/Transferencias.py", title="Transferencias", icon="🏛️"),
     st.Page("src/paginas/Rifas.py", title="Rifas", icon="🗒️"),
     st.Page("src/paginas/Anotaciones.py", title="Anotaciones", icon="📘"),
@@ -89,7 +78,7 @@ dict_general: dict = {}
 try: # revisar si existen la base de datos
     with open("Fondo.db", "r") as f:
         f.close()
-    
+
     dict_general["Paginas Generales"] = paginas_generales
 
     if st.session_state.admin:

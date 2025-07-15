@@ -1,4 +1,5 @@
 import src.sql.conect as c_sql
+import src.funciones.general as fg
 import streamlit as st
 import sqlite3 as sql
 import pandas as pd
@@ -6,7 +7,7 @@ import datetime
 
 
 def sumar_una_multa(s: str, i: int) -> str:
-    s = list(s)
+    s = list(s) #type: ignore
 
     value = 0 if s[i] == "n" else int(s[i])
     value += 1
@@ -27,7 +28,7 @@ def rectificar_cuotas(index: int) -> None:
         )
     )
 
-    fecha_actual: datetime = datetime.datetime.now()
+    fecha_actual = datetime.datetime.now()
 
     semanas_a_revisar: int = sum(
         map(lambda x: int(x < fecha_actual), calendario)
@@ -63,12 +64,12 @@ def rectificar_cuotas(index: int) -> None:
 def contar_multas(comp: str) -> int:
     if comp == "n":
         return 0
-    
+
     des_comp = list(
         map(
             lambda x: list(
                 map(int, x.split(":"))
-            ), 
+            ),
         comp.split("_")
         )
     )
@@ -149,12 +150,12 @@ def pagar_n_cuotas(index: int, n: int) -> None:
 
 
 def descontar_n_multas(comp: str, n: int) -> str:
-    
+
     des_comp = list(
         map(
             lambda x: list(
                 map(int, x.split(":"))
-            ), 
+            ),
         comp.split("_")
         )
     )
@@ -317,15 +318,15 @@ def formulario_de_pago(
 
 
 def multas_comp_str(comp: str) -> str:
-    
+
     if comp == "n":
         return "n"*50
-    
+
     des_comp = list(
         map(
             lambda x: list(
                 map(int, x.split(":"))
-            ), 
+            ),
             comp.split("_")
         )
     )
@@ -341,9 +342,18 @@ def multas_comp_str(comp: str) -> str:
 def multas_str_comp(multas: str) -> dict[int: int]:
 
     result = [
-        f"{i}:{multas[i]}" 
-        for i in range(len(multas)) 
+        f"{i}:{multas[i]}"
+        for i in range(len(multas))
         if multas[i] != "n"
     ]
-    
+
     return "_".join(result) if len(result) != 0 else "n"
+
+def rectificar_boton_iniciar_pago(cuotas: int, multas: int, index: int):
+    if cuotas == 0 and multas == 0:
+        return False, "No se va a pagar nada"
+
+    if not fg.rect_estado(index):
+        return False, "El usuario no esta activo"
+
+    return True, ""

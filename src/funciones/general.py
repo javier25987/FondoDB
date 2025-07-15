@@ -1,3 +1,4 @@
+import src.sql.conect as c_sql
 import streamlit as st
 import subprocess
 import datetime
@@ -17,7 +18,7 @@ def error_commit() -> None:
         esta correctamente abierto, si cuenta con conexion a internet
         o si es la primera vez que se guarda cambios que el repositorio
         remoto esta correctamente configurado  🚨
-        
+
         > **NOTA:** Este proceso puede demorar un poco, por favor
         > espere 10 segundos
         """  # , icon="🚨"
@@ -49,3 +50,7 @@ def advertencia():
         " posible."
     )
     st.page_link("src/session/login.py", label="Ingresar", icon=":material/login:")
+
+
+def rect_estado(idx: int) -> bool:
+    return bool(c_sql.obtener_ig("estado", idx))

@@ -1,6 +1,6 @@
 import sqlite3 as sql
 
-def solicitar_registro(mes: int) -> None:
+def solicitar_registro(mes: int) -> dict:
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
@@ -24,7 +24,6 @@ def solicitar_registro(mes: int) -> None:
         "fechas": list(map(int, datos[0])),
         "ingesos": datos[1],
         "egresos": datos[2]
-
     }
 
     return result

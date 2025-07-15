@@ -3,14 +3,14 @@ import src.sql.conect as c_sql
 import streamlit as st
 import time
 
-index: int = st.session_state.usuario_actual_anotaciones
+index: int = st.session_state.usuario
 
 index_de_usuario: int = st.sidebar.number_input("Numero de usuario.", value=0, step=1)
 
 if st.sidebar.button("Buscar", key="00011"):
-    estado: (bool, str) = fa.abrir_usuario(index_de_usuario) # type: ignore
+    estado = fa.abrir_usuario(index_de_usuario)
     if estado[0]:
-        st.session_state.usuario_actual_anotaciones = index_de_usuario
+        st.session_state.usuario = index_de_usuario
         st.rerun()
     else:
         st.error(estado[1], icon="🚨")
@@ -40,7 +40,7 @@ with cols_2[1]:
 with cols_2[2]:
     if st.button("Realizar anotacion"):
         estado_anotacion: (bool, str) = fa.certificar_anotacion( # type: ignore
-            anotacion, motivo, monto_anotacion
+            anotacion, motivo, monto_anotacion, index
         )
         if estado_anotacion[0]:
             fa.realizar_anotacion(index, anotacion, monto_anotacion, motivo)

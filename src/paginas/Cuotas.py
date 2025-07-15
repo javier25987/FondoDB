@@ -7,14 +7,14 @@ if c_sql.obtener_ajuste("calendario", False) == "n":
     st.info("El calendario aun no ha sido creado", icon="ℹ️")
     st.stop()
 
-index: int = st.session_state.usuario_cuotas
+index: int = st.session_state.usuario
 
 index_de_usuario: int = st.sidebar.number_input("Numero de usuario:", value=0, step=1)
 
 if st.sidebar.button("Buscar"):
-    estado: list[bool, str] = fc.abrir_usuario(index_de_usuario)
+    estado = fc.abrir_usuario(index_de_usuario)
     if estado[0]:
-        st.session_state.usuario_cuotas = index_de_usuario
+        st.session_state.usuario = index_de_usuario
         st.rerun()
     else:
         st.toast(estado[1], icon="🚨")
@@ -44,7 +44,7 @@ with col2_1:
 with col2_2:
     st.table(df2)
 
-numero_cuotas_a_pagar: int = 50 - c_sql.obtener_cuotas("pagas", index)
+numero_cuotas_a_pagar = 50 - c_sql.obtener_cuotas("pagas", index)
 
 if numero_cuotas_a_pagar > 10:
     numero_cuotas_a_pagar = 10
@@ -74,8 +74,11 @@ with cols_2[0]:
     )
 
 if cols_2[1].button("Iniciar proceso de pago"):
-    if cuotas_a_pagar == 0 and multas_a_pagar == 0:
-        st.error("No se va a pagar nada", icon="🚨")
+    boton_iniciar_pago = fc.rectificar_boton_iniciar_pago(
+        cuotas_a_pagar, multas_a_pagar, index
+    )
+    if not boton_iniciar_pago[0]:
+        st.toast(boton_iniciar_pago[1], icon="🚨")
     else:
         st.balloons()
         fc.formulario_de_pago(

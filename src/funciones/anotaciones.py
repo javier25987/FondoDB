@@ -1,5 +1,5 @@
 import src.sql.conect as c_sql
-import streamlit as st
+import src.funciones.general as fg
 import datetime
 
 
@@ -11,9 +11,12 @@ def abrir_usuario(index: int) -> (bool, str): # type: ignore
 
 
 def certificar_anotacion(
-        anotacion: str, motivo: str, monto: int
+        anotacion: str, motivo: str, monto: int, idx
 ) -> (bool, str): # type: ignore
-    
+
+    if not fg.rect_estado(idx):
+        return False, "El usuario no esta activo"
+
     if anotacion == "":
         return False, "La anotacion esta vacia"
 
@@ -25,7 +28,7 @@ def certificar_anotacion(
     for i in simbolos:
         if i in anotacion:
             return False, f"El simbolo '{i}' no puede estar en la anotacion"
-        
+
     return True, ""
 
 
@@ -65,4 +68,4 @@ def obtener_anotaciones(index: int, motivo: str) -> list[str, ...]: #type: ignor
 
     anotaciones = c_sql.obtener_valor("anotaciones", motivo, index)
 
-    return anotaciones.split("_") if anotaciones != "n" else [] 
+    return anotaciones.split("_") if anotaciones != "n" else []
