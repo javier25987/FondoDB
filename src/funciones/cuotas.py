@@ -1,5 +1,5 @@
-import src.sql.conect as c_sql
 import src.funciones.general as fg
+import src.sql.conect as c_sql
 import streamlit as st
 import sqlite3 as sql
 import pandas as pd
@@ -7,7 +7,7 @@ import datetime
 
 
 def sumar_una_multa(s: str, i: int) -> str:
-    s = list(s) #type: ignore
+    s = list(s)
 
     value = 0 if s[i] == "n" else int(s[i])
     value += 1
@@ -41,7 +41,7 @@ def rectificar_cuotas(index: int) -> None:
         multas = multas_comp_str(multas)
 
         cobrar_multas: bool = bool(c_sql.obtener_ajuste("cobrar multas"))
-        anular_usuarios: bool = bool(c_sql.obtener_ajuste("anular usuarios"))
+        #anular_usuarios: bool = bool(c_sql.obtener_ajuste("anular usuarios"))
         pagas: int = c_sql.obtener_cuotas("pagas", index)
         deudas: int = 0
 
@@ -77,7 +77,7 @@ def contar_multas(comp: str) -> int:
     return sum(j for _, j in des_comp)
 
 
-def abrir_usuario(index: int) -> (bool, str): # type: ignore
+def abrir_usuario(index: int) -> tuple[bool, str]:
     if 0 > index >= c_sql.obtener_ajuste("usuarios"):
         return False, "El numero de usuario esta fuera de rango"
 
@@ -197,7 +197,6 @@ def crear_nuevo_cheque(
     index: int, multas_pagadas: int,
     cuotas_pagadas: int, pago_efect: bool
 ) -> None:
-
     nombre: str = c_sql.obtener_ig("nombre", index)
     if len(nombre) > 17:
         nombre = nombre[:17]

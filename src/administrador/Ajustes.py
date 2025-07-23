@@ -31,7 +31,7 @@ with tab[0]:
     else:
         calendario: list[str] = calendario.split("_")
         hora_de_corte: str = calendario[1][-2:]
-        calendario: list[str] = list(map(lambda x: x[:-3], calendario))
+        calendario = list(map(lambda x: x[:-3], calendario))
         # calendario += ['____/__/__']
 
         st.markdown(f"##### Hora de cierre: {hora_de_corte}")
@@ -51,10 +51,10 @@ with tab[0]:
     col0 = st.columns(4)
 
     with col0[0]:
-        n_hora = st.number_input("Hora de cierre: ", value=19, step=1)
+        n_hora: int = st.number_input("Hora de cierre: ", value=19, step=1)
 
     with col0[1]:
-        n_fecha_inicial: datetime = st.date_input("Fecha inicial: ")
+        n_fecha_inicial = st.date_input("Fecha inicial: ")
     with col0[2]:
         cantidad_dobles: int = st.number_input("Fechas dobles:", value=1, step=1)
     with col0[3]:

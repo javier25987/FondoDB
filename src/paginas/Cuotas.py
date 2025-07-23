@@ -12,7 +12,7 @@ index: int = st.session_state.usuario
 index_de_usuario: int = st.sidebar.number_input("Numero de usuario:", value=0, step=1)
 
 if st.sidebar.button("Buscar"):
-    estado = fc.abrir_usuario(index_de_usuario)
+    estado: tuple[bool, str] = fc.abrir_usuario(index_de_usuario)
     if estado[0]:
         st.session_state.usuario = index_de_usuario
         st.rerun()
@@ -35,14 +35,10 @@ st.header(f"Numero de telefono: {c_sql.obtener_ig("telefono", index)}")
 
 st.divider()
 
-df1, df2 = fc.tablas_para_cuotas_y_multas(index)
-col2_1, col2_2 = st.columns(2)
+tablas_usr = fc.tablas_para_cuotas_y_multas(index)
 
-with col2_1:
-    st.table(df1)
-
-with col2_2:
-    st.table(df2)
+for col, tab in zip(st.columns(2), tablas_usr):
+    col.table(tab)
 
 numero_cuotas_a_pagar = 50 - c_sql.obtener_cuotas("pagas", index)
 
