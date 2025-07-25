@@ -82,6 +82,13 @@ if cols_2[1].button("Iniciar proceso de pago"):
         )
 
 st.divider()
-if st.button("Abrir ultimo cheque"):
-    with st.spinner("Abriendo cheque..."):
-        os.system("notepad.exe src/text/cheque_de_cuotas.txt")
+if st.button("Solicitar ultimo cheque"):
+    with open("src/text/cheque_de_cuotas.txt", "r", encoding="utf_8") as f:
+        archivo = f.readlines()
+        f.close()
+
+    with open("src/text/index.txt", "w", encoding="utf_8") as f:
+        f.write("".join(archivo))
+        f.close()
+    
+    st.toast("El documento ha sido creado, lo puede consultar en la seccion 'Documentos'", icon="✏️")

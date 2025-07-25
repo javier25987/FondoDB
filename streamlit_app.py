@@ -24,7 +24,7 @@ if "ranura_actual" not in st.session_state:
     st.session_state.ranura_actual = "1"
 
 if "mes_registro" not in st.session_state:
-    st.session_state.mes_registro = 1
+    st.session_state.mes_registro = 0
 
 if "numero_transf" not in st.session_state:
     st.session_state.numero_transf = -1
@@ -44,12 +44,13 @@ paginas_generales: list = [
     st.Page("src/paginas/Cuotas.py", title="Cuotas", icon="📆"),
     st.Page("src/paginas/Prestamos.py", title="Prestamos", icon="💵"),
     st.Page("src/paginas/AnalisUsuarios.py", title="Analizar Ususarios", icon="📈"),
-    st.Page("src/paginas/Apuntes.py", title="Apuntes", icon="📘"),
+    st.Page("src/paginas/Apuntes.py", title="Apuntes", icon="🏷"),
     st.Page("src/paginas/Transferencias.py", title="Transferencias", icon="🏛️"),
     st.Page("src/paginas/Rifas.py", title="Rifas", icon="🗒️"),
     st.Page("src/paginas/Anotaciones.py", title="Anotaciones", icon="📘"),
     st.Page("src/paginas/VerSocios.py", title="Ver Usuarios", icon="🔎"),
-    st.Page("src/paginas/Registros.py", title="Registros", icon="📚")
+    st.Page("src/paginas/Registros.py", title="Registros", icon="📚"),
+    st.Page("src/paginas/DocumentosFondo.py", title="Documentos", icon="📄")
 ]
 
 # paginas de el modo administardor

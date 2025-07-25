@@ -193,14 +193,57 @@ def pagar_n_multas(index: int, n: int) -> None:
     c_sql.increment("informacion_general", "aporte_a_multas", index, total)
 
 
+# def crear_nuevo_cheque(
+#     index: int, multas_pagadas: int,
+#     cuotas_pagadas: int, pago_efect: bool
+# ) -> None:
+#     nombre: str = c_sql.obtener_ig("nombre", index)
+#     if len(nombre) > 17:
+#         nombre = nombre[:17]
+
+#     puestos: int = c_sql.obtener_ig("puestos", index)
+
+#     valor_cuota = c_sql.obtener_ajuste("valor cuota")
+#     valor_multa = c_sql.obtener_ajuste("valor multa")
+
+#     total_multas: int = multas_pagadas * valor_multa * puestos
+#     total_cuotas: int = cuotas_pagadas * valor_cuota * puestos
+
+#     cheque: list[str] = [
+#         "===========================\n",
+#         "=                         =\n",
+#         "=    FONDO SAN JAVIER     =\n",
+#         "=                         =\n",
+#         "===========================\n",
+#         f"> Nombre:{nombre}\n",
+#         f"> Numero:{index}\n",
+#         f"> Puestos:{puestos}\n",
+#         "===========================\n",
+#         f"> Multas pagadas:{multas_pagadas}\n",
+#         f"> Valor multa:{valor_multa:,}\n",
+#         f"> TOTAL multas:{total_multas:,}\n",
+#         "===========================\n",
+#         f"> Cuotas pagadas:{cuotas_pagadas}\n",
+#         f"> Valor cuota:{valor_cuota:,}\n",
+#         f"> TOTAL cuotas:{total_cuotas:,}\n",
+#         "===========================\n",
+#         f"> Metodo de pago:{"Efect" if pago_efect else "Transf"}\n",
+#         f"> Total pagado:{total_multas + total_cuotas:,}\n",
+#         "===========================\n",
+#         f"> Fecha:{datetime.datetime.now().strftime("%Y/%m/%d")}\n",
+#         f"> Hora:{datetime.datetime.now().strftime("%H:%M")}\n",
+#         "===========================",
+#     ]
+
+#     with open("src/text/cheque_de_cuotas.txt", "w", encoding="utf_8") as f:
+#         f.write("".join(cheque))
+#         f.close()
+
+
 def crear_nuevo_cheque(
-    index: int, multas_pagadas: int,
-    cuotas_pagadas: int, pago_efect: bool
+    index: int, multas_pagadas: int, cuotas_pagadas: int, pago_efect: bool
 ) -> None:
     nombre: str = c_sql.obtener_ig("nombre", index)
-    if len(nombre) > 17:
-        nombre = nombre[:17]
-
     puestos: int = c_sql.obtener_ig("puestos", index)
 
     valor_cuota = c_sql.obtener_ajuste("valor cuota")
@@ -209,35 +252,47 @@ def crear_nuevo_cheque(
     total_multas: int = multas_pagadas * valor_multa * puestos
     total_cuotas: int = cuotas_pagadas * valor_cuota * puestos
 
-    cheque: list[str] = [
-        "===========================\n",
-        "=                         =\n",
-        "=    FONDO SAN JAVIER     =\n",
-        "=                         =\n",
-        "===========================\n",
-        f"> Nombre:{nombre}\n",
-        f"> Numero:{index}\n",
-        f"> Puestos:{puestos}\n",
-        "===========================\n",
-        f"> Multas pagadas:{multas_pagadas}\n",
-        f"> Valor multa:{valor_multa:,}\n",
-        f"> TOTAL multas:{total_multas:,}\n",
-        "===========================\n",
-        f"> Cuotas pagadas:{cuotas_pagadas}\n",
-        f"> Valor cuota:{valor_cuota:,}\n",
-        f"> TOTAL cuotas:{total_cuotas:,}\n",
-        "===========================\n",
-        f"> Metodo de pago:{"Efect" if pago_efect else "Transf"}\n",
-        f"> Total pagado:{total_multas + total_cuotas:,}\n",
-        "===========================\n",
-        f"> Fecha:{datetime.datetime.now().strftime("%Y/%m/%d")}\n",
-        f"> Hora:{datetime.datetime.now().strftime("%H:%M")}\n",
-        "===========================",
-    ]
+    cheque: str = f"""
+        <h1>Fondo San Javier</h1>
+        <hr>
+        <ul>
+            <li>Nombre:{nombre}</li>
+            <li>Numero:{index}</li>
+            <li>Puestos:{puestos}</li>
+        </ul>
+        <hr>
+        <ul>
+            <li>Multas pagadas:{multas_pagadas}</li>
+            <li>Valor multa:{valor_multa:,}</li>
+            <li>TOTAL multas:{total_multas:,}</li>
+        </ul>
+        <hr>
+        <ul>
+            <li>Cuotas pagadas:{cuotas_pagadas}</li>
+            <li>Valor cuota:{valor_cuota:,}</li>
+            <li>TOTAL cuotas:{total_cuotas:,}</li>
+        </ul>
+        <hr>
+        <ul>
+            <li>Metodo de pago:{"Efect" if pago_efect else "Transf"}</li>
+            <li>Total pagado:{total_multas + total_cuotas:,}</li>
+        </ul>
+        <hr>
+        <ul>
+            <li>Fecha:{datetime.datetime.now().strftime("%Y/%m/%d")}</li>
+            <li>Hora:{datetime.datetime.now().strftime("%H:%M")}</li>
+        </ul>
+    """
+
+    with open("src/text/index.txt", "w", encoding="utf_8") as f:
+        f.write(cheque)
+        f.close()
 
     with open("src/text/cheque_de_cuotas.txt", "w", encoding="utf_8") as f:
-        f.write("".join(cheque))
+        f.write(cheque)
         f.close()
+
+    st.toast("El documento ha sido creado, lo puede consultar en la seccion 'Documentos'", icon="✏️")
 
 
 def registrar_transferencia(index: int, total: int) -> None:

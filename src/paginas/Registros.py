@@ -4,15 +4,23 @@ import pandas as pd
 
 st.title("Dinero ingresado y egresado por mes")
 
-st.pills("Mes que desea ver:", range(1, 13),
-        key="mes_registro")
+cols = st.columns([2, 8])
 
-st.divider()
+with cols[0]:
+    mes = st.selectbox("Mes que desea ver:", range(13))
 
-chart_data = pd.DataFrame(
-    fr.solicitar_registro(
-        st.session_state.mes_registro
-    )
-)
-st.line_chart(chart_data, x="fechas")
+    if st.button("Cargar mes"):
+        st.session_state.mes_registro = mes
+        st.rerun()
+
+with cols[1]:
+    if st.session_state.mes_registro != 0:
+        chart_data = pd.DataFrame(
+            fr.solicitar_registro(
+                st.session_state.mes_registro
+            )
+        )
+        st.line_chart(chart_data, x="fechas")
+    else:
+        pass
 

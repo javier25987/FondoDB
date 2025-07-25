@@ -69,7 +69,6 @@ def crear_tablas_de_prestamos(index: int):
 
 
 def consultar_capital_disponible(index: int) -> tuple:
-
     capital: int = c_sql.obtener_ig("capital", index)
     capital_disponible: int = int(
         capital * c_sql.obtener_ajuste("capital usable") / 100
@@ -206,49 +205,88 @@ def consultar_capital_usuario(index: int) -> int:
     return dato if dato is not None else 0
 
 
+    # carta: list[str] = [
+    #     fecha_hora_str + "\n",
+    #     "\n",
+    #     "Señores de el fondo, yo _________________________ usuari@ № _______ de el fondo San Javier\n",
+    #     "\n",
+    #     "identificado con cedula de ciudadania № _______________ solicito un prestamo por el valor \n",
+    #     "\n"
+    #     "de _______________, con el interes de ______ %, tengo la intencion de pagar el prestamo en \n"
+    #     "\n",
+    #     "_______ mes(es), si mi dinero no llegase a ser suficiente solicito como fiador(es) a (...),\n",
+    #     "\n",
+    #     "con sus respectivas deudas especificadas acontinuacion:\n",
+    #     "\n",
+    #     "┌───────────────────────────┬──────────┬───────────────────────────┐\n",
+    #     "│     Nombre(s)      (...)  │  Numero  │     Deuda                 │\n",
+    #     "├───────────────────────────┼──────────┼───────────────────────────┤\n",
+    #     "│                           │          │                           │\n",
+    #     "├───────────────────────────┼──────────┼───────────────────────────┤\n",
+    #     "│                           │          │                           │\n",
+    #     "├───────────────────────────┼──────────┼───────────────────────────┤\n",
+    #     "│                           │          │                           │\n",
+    #     "├───────────────────────────┼──────────┼───────────────────────────┤\n",
+    #     "│                           │          │                           │\n",
+    #     "├───────────────────────────┼──────────┼───────────────────────────┤\n",
+    #     "│                           │          │                           │\n",
+    #     "└───────────────────────────┴──────────┴───────────────────────────┘\n",
+    #     "\n",
+    #     "\n",
+    #     "\n",
+    #     "\n",
+    #     "\n",
+    #     "\n",
+    #     "\n",
+    #     "     _________________________                         _________________________\n",
+    #     "        usuario de el fondo                                    tesorero",
+    # ]
+
+
 def hacer_carta_de_prestamo() -> None:
     ahora: datetime = datetime.datetime.now()
     fecha_hora_str: str = ahora.strftime("%Y/%m/%d %H:%M")
-    carta: list[str] = [
-        fecha_hora_str + "\n",
-        "\n",
-        "Señores de el fondo, yo _________________________ usuari@ № _______ de el fondo San Javier\n",
-        "\n",
-        "identificado con cedula de ciudadania № _______________ solicito un prestamo por el valor \n",
-        "\n"
-        "de _______________, con el interes de ______ %, tengo la intencion de pagar el prestamo en \n"
-        "\n",
-        "_______ mes(es), si mi dinero no llegase a ser suficiente solicito como fiador(es) a (...),\n",
-        "\n",
-        "con sus respectivas deudas especificadas acontinuacion:\n",
-        "\n",
-        "┌───────────────────────────┬──────────┬───────────────────────────┐\n",
-        "│     Nombre(s)      (...)  │  Numero  │     Deuda                 │\n",
-        "├───────────────────────────┼──────────┼───────────────────────────┤\n",
-        "│                           │          │                           │\n",
-        "├───────────────────────────┼──────────┼───────────────────────────┤\n",
-        "│                           │          │                           │\n",
-        "├───────────────────────────┼──────────┼───────────────────────────┤\n",
-        "│                           │          │                           │\n",
-        "├───────────────────────────┼──────────┼───────────────────────────┤\n",
-        "│                           │          │                           │\n",
-        "├───────────────────────────┼──────────┼───────────────────────────┤\n",
-        "│                           │          │                           │\n",
-        "└───────────────────────────┴──────────┴───────────────────────────┘\n",
-        "\n",
-        "\n",
-        "\n",
-        "\n",
-        "\n",
-        "\n",
-        "\n",
-        "     _________________________                         _________________________\n",
-        "        usuario de el fondo                                    tesorero",
-    ]
 
-    with open("src/text/carta_prestamo.txt", "w", encoding="utf-8") as f:
-        f.write("".join(carta))
+    carta: str = f"""
+        <p>{fecha_hora_str}</p>
+        <p>
+            Señores de el fondo, yo __________________________________ usuari@ № _______ del fondo San 
+            Javier identificado con cedula de ciudadania № _________________ solicito un prestamo por 
+            el valor de __________________, con el interes de ______ %, tengo la intencion de pagar el
+            prestamo en _______ mes(es), si mi dinero no llegase a ser suficiente solicito como fiador(es)
+            a (...), con sus respectivas deudas especificadas acontinuacion:
+        </p>
+        <ul>
+            <li>Nombre:</li>
+            <li>Puesto:</li>
+            <li>Deuda:</li>
+        </ul>
+        <ul>
+            <li>Nombre:</li>
+            <li>Puesto:</li>
+            <li>Deuda:</li>
+        </ul>
+        <ul>
+            <li>Nombre:</li>
+            <li>Puesto:</li>
+            <li>Deuda:</li>
+        </ul>
+        <pre>
+
+
+
+
+
+    _________________________                         _________________________
+      usuario de el fondo                                    tesorero
+        </pre>
+    """
+
+    with open("src/text/index.txt", "w", encoding="utf-8") as f:
+        f.write(carta)
         f.close()
+
+    st.toast("El documento ha sido creado, lo puede consultar en la seccion 'Documentos'", icon="✏️")
 
 
 def rectificar_viavilidad(
@@ -379,12 +417,12 @@ def escribir_prestamo(
             id, estado, interes, intereses_vencidos,
             revisiones, deuda, fiadores,
             deuda_con_fiadores, fechas_de_pago,
-            cargar_intereses
+            cargar_intereses, interes_generado
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             index, 1, interes, 0, 0, valor, fiadores,
-            deudas_fiadores, calendario, 0
+            deudas_fiadores, calendario, 0, 0
         )
     )
 
@@ -399,7 +437,7 @@ def formulario_de_prestamo(
     index: int, valor: int, fiadores: list[int] = list,
     deudas_fiadores: list[int] = list,
 ) -> None:
-
+    
     st.header(f"№ {index}: {c_sql.obtener_ig("nombre", index).title()}")
     st.divider()
 
@@ -424,7 +462,7 @@ def formulario_de_prestamo(
         st.rerun()
 
 
-def pagar_un_prestamo(index: int, monto: int, codigo: int):
+def pagar_un_prestamo(index: int, monto: int, codigo: int) -> None:
 
     anotacion: str = f"se ha pagado {monto:,} al prestamo numero {codigo}"
 

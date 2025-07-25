@@ -1,5 +1,8 @@
 import src.funciones.cuotas as fc
 import datetime
+import src.sql.conect as c_sql
+import pandas as pd
+import sqlite3 as sql
 
 
 def obtener_estado_de_cuenta(
@@ -37,3 +40,69 @@ def obtener_estado_de_cuenta(
     with open("text/estado_de_cuenta.txt", "w", encoding="utf-8") as f:
         f.write("".join(formato))
         f.close()
+
+
+def abrir_usuario(idx: int) -> tuple[bool, str]:
+    if 0 > idx >= c_sql.obtener_ajuste("usuarios"):
+        return False, "El numero de usuario esta fuera de rango"
+
+    return True, ""
+
+
+def obtener_informacion_general(idx: int) -> pd.DataFrame:
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    cursor.execute(
+        """
+        SELECT 
+            SUM(ig.capital),
+            SUM(ig.aporte_a_multas), 
+            SUM(ig.multas_extra), 
+            SUM(p.prestamos_hechos), 
+            SUM(p.dinero_en_prestamos), 
+            SUM(p.dinero_por_intereses), 
+            (
+                SELECT 
+                    SUM(ph.intereses_vencidos ) 
+                FROM prestamos_hechos ph 
+            ), 
+            (
+                SELECT 
+                    SUM(ph.deuda ) 
+                FROM prestamos_hechos ph 
+            ), 
+            (
+                SELECT 
+                    SUM(monto)
+                FROM transferencias
+            ) 
+        FROM informacion_general ig 
+        JOIN prestamos p 
+        ON p.id = ig.id
+        """
+    )
+
+    datos = cursor.fetchall()[0]
+    datos = map(lambda x: f"{x:,}", datos)
+
+    nombres = [
+        "capital _",
+		".. de multas pagas",
+		".. en anotaciones",
+		".. de prestamos hechos",
+		".. de dinero retirado en prestamos",
+		".. de intereses pagados",
+		".. de Intereses en deuda",
+		".. de deuda de todos los prestamos",
+		".. pagado en transferencias"
+    ]
+
+    conexion.close()
+
+    return pd.DataFrame(
+        {
+            "_ Total ..": nombres,
+            "Valor": datos
+        }
+    )
