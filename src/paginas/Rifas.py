@@ -33,7 +33,7 @@ with tabs[0]:
         )
 
         if st.button("Entregar boletas"):
-            pass
+            fr.entregar_boletas(index, boletas_selecionadas, "1")
 
 
 with tabs[1]:
