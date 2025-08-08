@@ -266,7 +266,7 @@ def registo(incremento: int, is_ingeso: bool = True) -> None:
     conexion.close()
 
 
-def obtener_datos_rifas(rifa: str, colum: str) -> str | int:
+def obtener_datos_rifas(rifa: str, colum: str):
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 

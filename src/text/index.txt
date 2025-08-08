@@ -1,34 +1,31 @@
 
-        <p>2025/07/26 02:15</p>
-        <p>
-            Señores de el fondo, yo _________________________ usuari@ № _______ de el fondo San Javier
-            identificado con cedula de ciudadania № _______________ solicito un prestamo por el valor 
-            de _______________, con el interes de ______ %, tengo la intencion de pagar el prestamo en
-            _______ mes(es), si mi dinero no llegase a ser suficiente solicito como fiador(es) a (...),
-            con sus respectivas deudas especificadas acontinuacion:
-        </p>
+        <h1>Fondo San Javier</h1>
+        <hr>
         <ul>
-            <li>Nombre:</li>
-            <li>Puesto:</li>
-            <li>Deuda:</li>
+            <li>Nombre:ricardo zamora</li>
+            <li>Numero:0</li>
+            <li>Puestos:10</li>
         </ul>
+        <hr>
         <ul>
-            <li>Nombre:</li>
-            <li>Puesto:</li>
-            <li>Deuda:</li>
+            <li>Multas pagadas:1</li>
+            <li>Valor multa:3,000</li>
+            <li>TOTAL multas:30,000</li>
         </ul>
+        <hr>
         <ul>
-            <li>Nombre:</li>
-            <li>Puesto:</li>
-            <li>Deuda:</li>
+            <li>Cuotas pagadas:2</li>
+            <li>Valor cuota:10,000</li>
+            <li>TOTAL cuotas:200,000</li>
         </ul>
-        <pre>
-
-
-
-
-
-    _________________________                         _________________________
-      usuario de el fondo                                    tesorero
-        </pre>
+        <hr>
+        <ul>
+            <li>Metodo de pago:Efect</li>
+            <li>Total pagado:230,000</li>
+        </ul>
+        <hr>
+        <ul>
+            <li>Fecha:2025/07/26</li>
+            <li>Hora:01:28</li>
+        </ul>
     

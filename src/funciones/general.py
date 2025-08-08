@@ -1,12 +1,27 @@
 import src.sql.conect as c_sql
 import streamlit as st
+import sqlite3 as sql
 import subprocess
 import datetime
 import time
 
+def hacer_apunte(seccion: str, cont: str) -> None:
+    fecha: str = datetime.datetime.now().strftime("%Y/%m/%d")
 
-def string_a_fecha(fecha: str):
-    return datetime.datetime(*map(int, fecha.split("/")))
+    db = sql.connect("Fondo.db")
+    cursor = db.cursor()
+
+    cursor.execute(
+        "INSERT INTO apuntes (fecha, seccion, contenido) VALUES (?, ?, ?)",
+        (fecha, seccion, cont)
+    )
+    db.commit()
+    cursor.close()
+    db.close()
+
+# def string_a_fecha(fecha: str):
+#     fecha_separada = map(int, fecha.split("/"))
+#     return datetime.datetime(*fecha_separada)
 
 
 @st.dialog("🚨  Error!!  🚨")

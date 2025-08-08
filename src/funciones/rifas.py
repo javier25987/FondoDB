@@ -1,68 +1,56 @@
 import streamlit as st
 import src.sql.conect as c_sql
-import pandas as pd
-import datetime
+import sqlite3
 
 
-def abrir_usuario(index: int) -> (bool, str):
+def abrir_usuario(index: int):
     if 0 > index >= c_sql.obtener_ajuste("usuarios"):
         return False, "El numero de usuario esta fuera de rango"
 
     return True, ""
 
 
+def cargar_usuarios_a_boletas(usr: int, boletas: list[int], rifa: str):
+    conexion = sqlite3.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    for i in boletas:
+        cursor.execute(
+            f"""
+            UPDATE boletas_rifa_{rifa}
+            SET dada_a = ?
+            WHERE idx = ?
+            """,
+            (usr, i),
+        )
+
+    conexion.commit()
+    conexion.close()
+
+
 @st.dialog("Entrega de talonario")
-def cargar_talonario(index: int, rifa: str):
-    st.header(
-        f"№ {index} - {c_sql.obtener_ig("nombre", index).title()}"
+def entregar_boletas(index: int, boletas: list[int], rifa: str):
+    st.header(f"№ {index} - {c_sql.obtener_ig('nombre', index).title()}")
+    st.divider()
+
+    st.write(
+        "Tenga en cuenta que los numeros que estan aca son el primer numero "
+        + "de la boleta que se usa como identificador para referenciar internamente "
+        + "a la boleta completa"
     )
-    st.divider()
 
-    columnas: int = c_sql.obtener_datos_rifas(rifa, "numeros_por_boleta")
-    filas: int = c_sql.obtener_datos_rifas(rifa, "boletas_por_talonario")
+    st.subheader("Boletas a entregar:")
 
-    l_col: list[str] = [str(i) for i in range(1, columnas + 1)]
-    l_fil: list[str] = [str(i) for i in range(1, filas + 1)]
+    for boleta in boletas:
+        st.markdown(f"* {boleta}")
 
-    for i in l_fil:
-        st.write(f"Boleta № {i} de el talonario:")
-        for col_j, j in zip(st.columns(columnas), l_col):
-            with col_j:
-                st.text_input(f"№ {j}", key=f"{i},{j}")
-    st.divider()
-
-    if st.button("Entregar talonario"):
-        talonario: list[str] = []
-        for i in l_fil:
-            boleta = []
-            for j in l_col:
-                boleta.append(st.session_state[f"{i},{j}"])
-
-            talonario.append("?".join(boleta))
-
-        talonario = "#".join(talonario)
-
-        c_sql.increment_str(
-            "rifas", f"r{rifa}_boletas", index, talonario
-        )
-
-        deuda_talo = (
-            c_sql.obtener_datos_rifas(rifa, "costo_de_boleta") *
-            c_sql.obtener_datos_rifas(rifa, "boletas_por_talonario")
-        )
-
-        c_sql.increment(
-            "rifas", f"r{rifa}_deudas", index, deuda_talo
-        )
-
-        st.rerun()
+    if st.button("Entregar boletas"):
+        cargar_usuarios_a_boletas(index, boletas, rifa)
 
 
 @st.dialog("Pago de boletas")
 def pago_de_boletas(index: int, pago: int, rifa: str):
-    st.header(
-        f"№ {index} - {c_sql.obtener_ig("nombre", index).title()}"
-    )
+    st.header(f"№ {index} - {c_sql.obtener_ig('nombre', index).title()}")
     st.divider()
 
     deuda_act: int = c_sql.obtener_rifas(f"r{rifa}_deudas", index)
@@ -74,29 +62,35 @@ def pago_de_boletas(index: int, pago: int, rifa: str):
     st.divider()
 
     if st.button("Aceptar pago"):
-        c_sql.increment(
-            "rifas", f"r{rifa}_deudas", index, -pago
-        )
+        c_sql.increment("rifas", f"r{rifa}_deudas", index, -pago)
 
         # ACA SE TIENE QUE PONER LA FUNCION PARA LA ANOTACION
 
         st.rerun()
 
 
-def crear_tablas_talonarios(boletas: str):
-    talonarios: list = boletas.split("_")
-    lista_r: list = []
-    for i in talonarios:
-        i_b = list(map(lambda x: x.split("?"), i.split("#")))
-        dict_t: dict = dict()
+def consultar_boletas_usr(index: int, rifa: str) -> list[str]:
+    conexion = sqlite3.connect("Fondo.db")
+    cursor = conexion.cursor()
 
-        dict_t["Boletas"] = [f"Boleta № {k + 1}" for k in range(len(i_b))]
+    cursor.execute(
+        f"""
+        SELECT boleta FROM boletas_rifa_{rifa} WHERE dada_a = ?
+        """,
+        (index,),
+    )
 
-        i_b = list(map(list, zip(*i_b)))
+    boletas = cursor.fetchall()
 
-        for j in range(len(i_b)):
-            dict_t[f"№ {j + 1}"] = i_b[j]
+    return list(map(lambda x: x[0], boletas))
 
-        lista_r.append(pd.DataFrame(dict_t))
 
-    return lista_r
+def consultar_boletas_libres(index: int, rifa: str) -> list[str]:
+    conexion = sqlite3.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    cursor.execute(f"SELECT idx FROM boletas_rifa_{rifa} WHERE dada_a = ?", (index,))
+
+    boletas = cursor.fetchall()
+
+    return list(map(lambda x: x[0], boletas))

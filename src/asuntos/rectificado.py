@@ -65,14 +65,14 @@ def rectificar_todo() -> None:
             )
         )
 
-        fecha_actual: datetime = datetime.datetime.now()
+        fecha_actual = datetime.datetime.now()
 
         semanas_a_revisar: int = sum(
             map(lambda x: int(x < fecha_actual), calendario)
         )
 
-        cobrar_multas: bool = bool(c_sql.obtener_ajuste("cobrar multas"))
-        anular_usuarios: bool = bool(c_sql.obtener_ajuste("anular usuarios"))
+        cobrar_multas = bool(c_sql.obtener_ajuste("cobrar multas"))
+        anular_usuarios = bool(c_sql.obtener_ajuste("anular usuarios"))
 
         print("Rectificando multas")
         for index in tqdm(range(c_sql.obtener_ajuste("usuarios"))):  # iteramos sobre todos los usuarios
@@ -103,12 +103,12 @@ def rectificar_todo() -> None:
         # revisamos para todos los prestamos
         cursor.execute(
             f"""
-            SELECT 
-                ph.codigo, 
-                ph.fechas_de_pago, 
+            SELECT
+                ph.codigo,
+                ph.fechas_de_pago,
                 ph.revisiones
-            FROM prestamos_hechos ph 
-            WHERE ph.estado = 1 
+            FROM prestamos_hechos ph
+            WHERE ph.estado = 1
             """
         )
 
@@ -116,25 +116,21 @@ def rectificar_todo() -> None:
 
         print("Rectificando prestamos")
         for i, j, k in tqdm(datos):
-
             fechas_pasadas: int = sum(
                 map(
                     lambda x: x < fecha_actual,
                     map(
-                        lambda y: datetime.datetime(*map(int, y.split("/"))), 
+                        lambda y: datetime.datetime(*map(int, y.split("/"))),
                         j.split("_")
                     ),
                 )
             )
-
             if fechas_pasadas > k:
-
                 for _ in range(fechas_pasadas - k):
-
                     cursor.execute(
                         f"""
                         UPDATE prestamos_hechos
-                        SET 
+                        SET
                             intereses_vencidos = intereses_vencidos + (
                                 deuda * interes
                             ) / 100,
@@ -142,12 +138,9 @@ def rectificar_todo() -> None:
                         WHERE codigo = {i}
                         """
                     )
-
         conexion.commit()
         conexion.close()
-
         cargar_ultimo_lunes()
         print("Proceso finalizado.")
-
     else:
         print("No fue necesario rectificar multas o intereses.")
