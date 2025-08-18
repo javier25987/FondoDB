@@ -28,7 +28,7 @@ def hacer_commit() -> None:
         fg.ejecutar_comando_git(["git", "push"])
 
         c_sql.guardar_ajuste("commits hechos", commits_hechos)
-        
+
         status.update(
             label="Los datos han sido cargados!", state="complete", expanded=False
         )

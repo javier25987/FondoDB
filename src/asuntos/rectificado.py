@@ -60,23 +60,22 @@ def rectificar_todo() -> None:
                 lambda x: datetime.datetime(*x),
                 map(
                     lambda y: map(int, y.split("/")),
-                    c_sql.obtener_ajuste("calendario", False).split("_")
+                    c_sql.obtener_ajuste("calendario", False).split("_"),
                 ),
             )
         )
 
         fecha_actual = datetime.datetime.now()
 
-        semanas_a_revisar: int = sum(
-            map(lambda x: int(x < fecha_actual), calendario)
-        )
+        semanas_a_revisar: int = sum(map(lambda x: int(x < fecha_actual), calendario))
 
         cobrar_multas = bool(c_sql.obtener_ajuste("cobrar multas"))
-        anular_usuarios = bool(c_sql.obtener_ajuste("anular usuarios"))
+        # anular_usuarios = bool(c_sql.obtener_ajuste("anular usuarios"))
 
         print("Rectificando multas")
-        for index in tqdm(range(c_sql.obtener_ajuste("usuarios"))):  # iteramos sobre todos los usuarios
-
+        for index in tqdm(
+            range(c_sql.obtener_ajuste("usuarios"))
+        ):  # iteramos sobre todos los usuarios
             # rectificamos para cuotas
             semanas_revisadas: int = c_sql.obtener_cuotas("revisiones", index)
 
@@ -102,7 +101,7 @@ def rectificar_todo() -> None:
 
         # revisamos para todos los prestamos
         cursor.execute(
-            f"""
+            """
             SELECT
                 ph.codigo,
                 ph.fechas_de_pago,
@@ -121,7 +120,7 @@ def rectificar_todo() -> None:
                     lambda x: x < fecha_actual,
                     map(
                         lambda y: datetime.datetime(*map(int, y.split("/"))),
-                        j.split("_")
+                        j.split("_"),
                     ),
                 )
             )

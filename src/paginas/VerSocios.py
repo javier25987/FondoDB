@@ -2,13 +2,7 @@ import src.funciones.versocios as fv
 import src.sql.conect as c_sql
 import streamlit as st
 
-tabs = st.tabs(
-    [
-        "Buscar Usuarios",
-        "Ver si necesita acuerdo",
-        "Buscar boleta"
-    ]
-)
+tabs = st.tabs(["Buscar Usuarios", "Ver si necesita acuerdo", "Buscar boleta"])
 
 with tabs[0]:
     cols = st.columns([6, 4], vertical_alignment="bottom")
@@ -29,22 +23,19 @@ with tabs[1]:
     st.info(
         "Todos los usuarios en esta tabla para la "
         "fecha actual tienen que firmar acuerdo",
-        icon="ℹ️"
+        icon="ℹ️",
     )
     st.table(fv.tabla_acuerdo())
 
 with tabs[2]:
     rifa_a_buscar: str = st.selectbox(
-        "Seleccione la rifa en la que desea buscar:",
-        ("1", "2", "3", "4")
+        "Seleccione la rifa en la que desea buscar:", ("1", "2", "3", "4")
     )
 
     col4_1 = st.columns(2)
 
     with col4_1[0]:
-        boleta_a_buscar: str = st.text_input(
-            "Numero que desea buscar en la boleta:"
-        )
+        boleta_a_buscar: str = st.text_input("Numero que desea buscar en la boleta:")
 
     with col4_1[1]:
         numeros_boleta: int = c_sql.obtener_datos_rifas(
@@ -69,9 +60,5 @@ with tabs[2]:
         st.table(fv.mostrar_boletas_todo(rifa_a_buscar))
     else:
         st.table(
-            fv.mostrar_boletas(
-                st.session_state.numero_buscar_boleta,
-                rifa_a_buscar
-            )
+            fv.mostrar_boletas(st.session_state.numero_buscar_boleta, rifa_a_buscar)
         )
-

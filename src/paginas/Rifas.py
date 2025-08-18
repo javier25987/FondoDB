@@ -3,7 +3,7 @@ import src.sql.conect as c_sql
 import src.funciones.rifas as fr
 import streamlit as st
 
-key: int = 0
+key = 0
 
 index = st.session_state.usuario
 
@@ -29,11 +29,13 @@ with tabs[0]:
 
     with cols_act[0]:
         boletas_selecionadas = st.multiselect(
-            "boletas disponibles:", fr.consultar_boletas_libres(16, "1")
+            "boletas disponibles:", fr.consultar_boletas_libres(-1, "1")
         )
 
         if st.button("Entregar boletas"):
-            fr.entregar_boletas(index, boletas_selecionadas, "1")
+            pass
+            # st.balloons()
+            # fr.entregar_boletas(index, boletas_selecionadas, "1")
 
 
 with tabs[1]:

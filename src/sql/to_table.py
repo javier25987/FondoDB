@@ -1,5 +1,6 @@
 import pandas as pd
 
+
 def fetchall_to_table(contenido, columnas):
     tabla = list(zip(*contenido))
 

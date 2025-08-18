@@ -75,7 +75,7 @@ def crear_tablas_rifas(rifa: str) -> list:
             {
                 "Premios": map(
                     lambda x: f"{int(x):,}" if x not in {"n", "", None} else x,
-                    datos[4].split("_")
+                    datos[4].split("_"),
                 )
             }
         ),
@@ -83,9 +83,14 @@ def crear_tablas_rifas(rifa: str) -> list:
 
 
 def cargar_datos_de_rifa(
-    rifa: str, numero_de_boletas: int, numeros_por_boleta: int,
-    boletas_por_talonario: int, costo_de_boleta: int,
-    costo_de_administracion: int, fecha_de_cierre, premios: list[int],
+    rifa: str,
+    numero_de_boletas: int,
+    numeros_por_boleta: int,
+    boletas_por_talonario: int,
+    costo_de_boleta: int,
+    costo_de_administracion: int,
+    fecha_de_cierre,
+    premios: list[int],
 ) -> None:
     suma_de_premios = sum(premios)
     ganancias_por_boleta = (numero_de_boletas * costo_de_boleta) - (
@@ -108,12 +113,17 @@ def cargar_datos_de_rifa(
             boletas_por_talonario = ?, costos_de_administracion = ?,
             ganancia_por_boleta = ?, fecha_de_cierre = ?
         WHERE rid = 'r{rifa}'
-        """, (
-            numero_de_boletas, numeros_por_boleta, premios,
-            costo_de_boleta, boletas_por_talonario,
-            costo_de_administracion, ganancias_por_boleta,
-            fecha_de_cierre.strftime("%Y/%m/%d")
-        )
+        """,
+        (
+            numero_de_boletas,
+            numeros_por_boleta,
+            premios,
+            costo_de_boleta,
+            boletas_por_talonario,
+            costo_de_administracion,
+            ganancias_por_boleta,
+            fecha_de_cierre.strftime("%Y/%m/%d"),
+        ),
     )
 
     conexion.commit()
@@ -135,11 +145,10 @@ def cerrar_una_rifa(rifa: str):
     fecha_de_cierre = fg.string_a_fecha(
         c_sql.obtener_datos_rifas(rifa, "fecha_de_cierre")
     )
-        
 
     if fecha_de_cierre > datetime.datetime.now():
         return False, "No se cumple la fecha de cierre"
-    
+
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
@@ -155,14 +164,9 @@ def cerrar_una_rifa(rifa: str):
     datos = cursor.fetchall()
 
     for i in datos:
-
         fp.escribir_prestamo(i[0], i[1], [], [])
 
-        st.toast(
-                f"💵 Se genero un prestamo por {i[1]:,}"
-                f"para el usuario № {i[0]}"
-            )
-        
+        st.toast(f"💵 Se genero un prestamo por {i[1]:,}para el usuario № {i[0]}")
 
     cursor.execute(
         f"""
@@ -176,6 +180,3 @@ def cerrar_una_rifa(rifa: str):
     conexion.close()
 
     return True, "Rifa cerrada correctamente"
-        
-    
-

@@ -22,4 +22,3 @@ with tab_usuario:
     if index == -1:
         st.title("Usuario indeterminado")
         st.stop()
-

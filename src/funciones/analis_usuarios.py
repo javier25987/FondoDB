@@ -88,21 +88,16 @@ def obtener_informacion_general(idx: int) -> pd.DataFrame:
 
     nombres = [
         "capital _",
-		".. de multas pagas",
-		".. en anotaciones",
-		".. de prestamos hechos",
-		".. de dinero retirado en prestamos",
-		".. de intereses pagados",
-		".. de Intereses en deuda",
-		".. de deuda de todos los prestamos",
-		".. pagado en transferencias"
+        ".. de multas pagas",
+        ".. en anotaciones",
+        ".. de prestamos hechos",
+        ".. de dinero retirado en prestamos",
+        ".. de intereses pagados",
+        ".. de Intereses en deuda",
+        ".. de deuda de todos los prestamos",
+        ".. pagado en transferencias",
     ]
 
     conexion.close()
 
-    return pd.DataFrame(
-        {
-            "_ Total ..": nombres,
-            "Valor": datos
-        }
-    )
+    return pd.DataFrame({"_ Total ..": nombres, "Valor": datos})

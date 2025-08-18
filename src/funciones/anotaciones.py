@@ -3,17 +3,14 @@ import src.funciones.general as fg
 import datetime
 
 
-def abrir_usuario(index: int) -> (bool, str): # type: ignore
+def abrir_usuario(index: int) -> (bool, str):  # type: ignore
     if 0 > index >= c_sql.obtener_ajuste("usuarios"):
         return False, "El numero de usuario esta fuera de rango"
 
     return True, ""
 
 
-def certificar_anotacion(
-        anotacion: str, motivo: str, monto: int, idx
-) -> (bool, str): # type: ignore
-
+def certificar_anotacion(anotacion: str, motivo: str, monto: int, idx) -> (bool, str):  # type: ignore
     if not fg.rect_estado(idx):
         return False, "El usuario no esta activo"
 
@@ -21,9 +18,12 @@ def certificar_anotacion(
         return False, "La anotacion esta vacia"
 
     if motivo in {"MULTA", "ACUERDO"} and monto <= 0:
-        return False, "No se puede hacer una anotacion con tal motivo y monto menor a cero"
+        return (
+            False,
+            "No se puede hacer una anotacion con tal motivo y monto menor a cero",
+        )
 
-    simbolos: list[str, ...] = ["_", "$", "."] # type: ignore
+    simbolos: list[str, ...] = ["_", "$", "."]  # type: ignore
 
     for i in simbolos:
         if i in anotacion:
@@ -32,21 +32,14 @@ def certificar_anotacion(
     return True, ""
 
 
-
-def realizar_anotacion(
-    index: int, anotacion: str, monto: int, motivo: str
-) -> None:
-
+def realizar_anotacion(index: int, anotacion: str, monto: int, motivo: str) -> None:
     # sumatoria a "aporte a multas"
     if motivo in {"MULTA", "ACUERDO"}:
-        c_sql.increment(
-            "informacion_general", "aporte_a_multas", index, monto
-        )
+        c_sql.increment("informacion_general", "aporte_a_multas", index, monto)
 
     # creacion de la anotacion
     anotacion: str = (
-        f"[{datetime.datetime.now().strftime('%Y/%m/%d %H:%M')}] "
-        + anotacion
+        f"[{datetime.datetime.now().strftime('%Y/%m/%d %H:%M')}] " + anotacion
     )
 
     if motivo != "GENERAL":
@@ -59,13 +52,10 @@ def realizar_anotacion(
 
     # escritura del valor
     if motivo != "GENERAL":
-        c_sql.increment(
-            "informacion_general", "multas_extra", index, monto
-        )
+        c_sql.increment("informacion_general", "multas_extra", index, monto)
 
 
-def obtener_anotaciones(index: int, motivo: str) -> list[str, ...]: #type: ignore
-
+def obtener_anotaciones(index: int, motivo: str) -> list[str, ...]:  # type: ignore
     anotaciones = c_sql.obtener_valor("anotaciones", motivo, index)
 
     return anotaciones.split("_") if anotaciones != "n" else []

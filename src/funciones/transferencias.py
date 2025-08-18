@@ -20,9 +20,7 @@ def mostrar_transferencias_todo():
 
     datos = list(zip(*datos))
 
-    nombres = [
-        c_sql.obtener_ig("nombre", i) for i in datos[0]
-    ]
+    nombres = [c_sql.obtener_ig("nombre", i) for i in datos[0]]
 
     datos[2] = map(lambda x: f"{x:,}", datos[2])
 
@@ -30,7 +28,7 @@ def mostrar_transferencias_todo():
         "Numero": datos[0],
         "Nombre": nombres,
         "Fecha y Hora": datos[1],
-        "Monto": datos[2]
+        "Monto": datos[2],
     }
 
     return pd.DataFrame(resultado)
@@ -54,6 +52,7 @@ def obtener_usuarios() -> tuple[int, ...]:
 
     return [i[0] for i in datos]
 
+
 def mostrar_transferencias(index: int):
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
@@ -72,9 +71,7 @@ def mostrar_transferencias(index: int):
 
     datos = list(zip(*datos))
 
-    nombres = [
-        c_sql.obtener_ig("nombre", i) for i in datos[0]
-    ]
+    nombres = [c_sql.obtener_ig("nombre", i) for i in datos[0]]
 
     datos[2] = map(lambda x: f"{x:,}", datos[2])
 
@@ -82,7 +79,7 @@ def mostrar_transferencias(index: int):
         "Numero": datos[0],
         "Nombre": nombres,
         "Fecha y Hora": datos[1],
-        "Monto": datos[2]
+        "Monto": datos[2],
     }
 
     return pd.DataFrame(resultado)

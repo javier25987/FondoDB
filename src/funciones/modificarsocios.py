@@ -1,20 +1,14 @@
-import src.funciones.general as fg
-import src.sql.conect as c_sql
 import streamlit as st
 import sqlite3 as sql
 import pandas as pd
 import time
 
 
-def insertar_socios(
-    nombre: str = "", puestos: int = 1, numero_celular: str = ""
-):
+def insertar_socios(nombre: str = "", puestos: int = 1, numero_celular: str = ""):
     if numero_celular == "":
         numero_celular = "n"
 
     nombre = nombre.lower()
-
-    
 
 
 @st.dialog("Añadir un nuevo usuario:")
@@ -57,13 +51,7 @@ def mostrar_usuarios() -> pd.DataFrame:
 
     datos = list(zip(*datos))
 
-    return pd.DataFrame(
-        {
-            "ID": datos[0],
-            "Nombre": datos[1],
-            "Telefono": datos[2]
-        }
-    )
+    return pd.DataFrame({"ID": datos[0], "Nombre": datos[1], "Telefono": datos[2]})
 
 
 def realizar_consulta(consulta: str, commit: bool) -> pd.DataFrame:
@@ -72,10 +60,8 @@ def realizar_consulta(consulta: str, commit: bool) -> pd.DataFrame:
 
     try:
         cursor.execute(consulta)
-    except:
-        st.toast(
-            "🚨 Hay un error con el formato o valores en la consulta"
-        )
+    except SyntaxError:
+        st.toast("🚨 Hay un error con el formato o valores en la consulta")
         return {}
 
     datos = cursor.fetchall()
@@ -101,7 +87,7 @@ def leer_estructura() -> str:
     with open("src/datos_tablas.md", "r") as f:
         archivos: str = f.readlines()
         f.close()
-    
+
     return "".join(archivos)
 
 
@@ -109,5 +95,5 @@ def leer_comandos() -> str:
     with open("src/comandos.md", "r") as f:
         archivos: str = f.readlines()
         f.close()
-    
+
     return "".join(archivos)

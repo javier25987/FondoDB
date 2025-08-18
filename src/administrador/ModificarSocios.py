@@ -1,16 +1,12 @@
 import src.funciones.modificarsocios as fm
 import streamlit as st
-import pandas as pd
 
 st.title("Modificar Usuarios")
 
 key: int = 0
 
 tabs = st.tabs(
-    [
-        "Añadir usuario", "Realizar consultas",
-        "Ver estructura DB", "Comandos SQL"
-    ]
+    ["Añadir usuario", "Realizar consultas", "Ver estructura DB", "Comandos SQL"]
 )
 
 with tabs[0]:
@@ -22,7 +18,7 @@ with tabs[0]:
         nombre: str = st.text_input("Nombre:")
         telefono: str = st.text_input("Numero celular:")
         puestos: int = st.number_input("Numero de puestos:", value=0, step=1)
-        
+
         if st.button("Añadir"):
             paso_1: bool = False
             paso_2: bool = False
@@ -39,7 +35,7 @@ with tabs[0]:
 
             if paso_1 and paso_2:
                 st.toast("Por ahora esta funcion no esta activa", icon="🚨")
-                #fm.menu_para_insertar_socio(nombre, puestos, telefono)
+                # fm.menu_para_insertar_socio(nombre, puestos, telefono)
 
     with col1[1]:
         st.table(fm.mostrar_usuarios())
@@ -56,7 +52,7 @@ with tabs[1]:
 
         if st.button("SQL run"):
             if consulta == "":
-                st.session_state.tabla_modificar = {} 
+                st.session_state.tabla_modificar = {}
             else:
                 st.session_state.tabla_modificar = fm.realizar_consulta(
                     consulta, commit

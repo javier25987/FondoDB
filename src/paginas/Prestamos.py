@@ -8,9 +8,7 @@ ranura_actual: str = st.session_state.ranura_actual
 
 index: int = st.session_state.usuario
 
-index_de_usuario: int = st.sidebar.number_input(
-    "Numero de usuario: ", value=0, step=1
-)
+index_de_usuario: int = st.sidebar.number_input("Numero de usuario: ", value=0, step=1)
 
 if st.sidebar.button("Buscar"):
     estado = fp.abrir_usuario(index_de_usuario)
@@ -25,16 +23,11 @@ if index == -1:
     st.title("Usuario indeterminado")
     st.stop()
 
-st.title(
-    f"№ {index} - {c_sql.obtener_ig("nombre", index).title()}"
-)
+st.title(f"№ {index} - {c_sql.obtener_ig('nombre', index).title()}")
 
-tab = st.tabs(
-    ["Prestamos", "Solicitar Prestamo", "Consultar Capital"]
-)
+tab = st.tabs(["Prestamos", "Solicitar Prestamo", "Consultar Capital"])
 
 with tab[0]:
-
     tablas_de_prestamos: list = fp.crear_tablas_de_prestamos(index)
 
     mostrar_opcion_pago: bool = False
@@ -56,30 +49,23 @@ with tab[0]:
         st.divider()
 
     if no_hay_prestamos:
-        st.info(
-            "No se han solicitado prestamos",
-            icon="ℹ️"
-        )
+        st.info("No se han solicitado prestamos", icon="ℹ️")
 
     if mostrar_opcion_pago:
-
         cols = st.columns([4, 4, 2], vertical_alignment="bottom")
 
         with cols[0]:
-            monto_a_pagar: int = st.number_input(
-                "Monto a pagar:", value=0, step=1
-            )
+            monto_a_pagar: int = st.number_input("Monto a pagar:", value=0, step=1)
 
         with cols[1]:
             codigo: int = st.selectbox(
-                "Codigo del prestamo:",
-                fp.obtener_codigos(index)
+                "Codigo del prestamo:", fp.obtener_codigos(index)
             )
 
         with cols[2]:
             if st.button("Pagar"):
                 if st.session_state.admin:
-                    estado_pago: (bool, str) = fp.rectificar_pago( #type: ignore
+                    estado_pago: (bool, str) = fp.rectificar_pago(  # type: ignore
                         codigo, monto_a_pagar, index
                     )
 
@@ -92,7 +78,6 @@ with tab[0]:
                     fg.advertencia()
 
 with tab[1]:
-
     st.subheader("Carta de solicitud: ")
     if st.button("Hacer carta"):
         with st.spinner("Abriendo carta"):
@@ -104,9 +89,7 @@ with tab[1]:
     col2_1, col2_2 = st.columns(2)
 
     with col2_1:
-        valor_prestamo: int = st.number_input(
-            "Valor de el prestamo: ", value=0, step=1
-        )
+        valor_prestamo: int = st.number_input("Valor de el prestamo: ", value=0, step=1)
 
     with col2_2:
         numero_de_fiadores: int = st.number_input(
@@ -137,7 +120,6 @@ with tab[1]:
 
     if st.button("Realizar prestamo"):
         if st.session_state.admin:
-
             if not fg.rect_estado(index):
                 st.toast("El usuario no esta activo", icon="🚨")
                 st.stop()
@@ -159,8 +141,10 @@ with tab[1]:
             if estado_prestamo[0]:
                 st.balloons()
                 fp.formulario_de_prestamo(
-                    index, valor_prestamo,
-                    fiadores_prestamo, deudas_prestamo,
+                    index,
+                    valor_prestamo,
+                    fiadores_prestamo,
+                    deudas_prestamo,
                 )
             else:
                 st.error(estado_prestamo[1], icon="🚨")

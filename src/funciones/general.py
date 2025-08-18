@@ -5,19 +5,23 @@ import subprocess
 import datetime
 import time
 
+
 def hacer_apunte(seccion: str, cont: str) -> None:
-    fecha: str = datetime.datetime.now().strftime("%Y/%m/%d")
+    gato = datetime.datetime.now()
+    fecha: str = gato.strftime("%Y/%m/%d")
+    hora: str = gato.strftime("%H:%M")
 
     db = sql.connect("Fondo.db")
     cursor = db.cursor()
 
     cursor.execute(
-        "INSERT INTO apuntes (fecha, seccion, contenido) VALUES (?, ?, ?)",
-        (fecha, seccion, cont)
+        "INSERT INTO apuntes (fecha, hora, seccion, contenido) VALUES (?, ?, ?, ?)",
+        (fecha, hora, seccion, cont),
     )
     db.commit()
     cursor.close()
     db.close()
+
 
 # def string_a_fecha(fecha: str):
 #     fecha_separada = map(int, fecha.split("/"))

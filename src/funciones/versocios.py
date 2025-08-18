@@ -26,16 +26,13 @@ def buscar_nombre(nombre: str) -> pd.DataFrame:
 
     datos = list(zip(*datos))
 
-    datos[3] = map(
-        lambda x: "✅ activo" if bool(x) else "🚨 desactivado",
-        datos[3]
-    )
+    datos[3] = map(lambda x: "✅ activo" if bool(x) else "🚨 desactivado", datos[3])
 
     resultado = {
         "Numero": datos[0],
         "Nombre": datos[1],
         "telefono": datos[2],
-        "estado": datos[3]
+        "estado": datos[3],
     }
 
     return pd.DataFrame(resultado)
@@ -73,7 +70,7 @@ def tabla_acuerdo() -> pd.DataFrame:
         "Numero": datos[0],
         "Nombre": datos[1],
         "Capital": datos[2],
-        "Dinero por si mismo": datos[3]
+        "Dinero por si mismo": datos[3],
     }
 
     return pd.DataFrame(resultado)
@@ -157,11 +154,7 @@ def mostrar_boletas(index: int, rifa_a_buscar: str) -> pd.DataFrame:
 
     datos = list(zip(*datos))
 
-    resultado = {
-        "Numero": datos[0],
-        "Nombre": datos[1],
-        "Boletas": datos[2]
-    }
+    resultado = {"Numero": datos[0], "Nombre": datos[1], "Boletas": datos[2]}
 
     return pd.DataFrame(resultado)
 
@@ -185,10 +178,6 @@ def mostrar_boletas_todo(rifa_a_buscar: str) -> pd.DataFrame:
 
     datos = list(zip(*datos))
 
-    resultado = {
-        "Numero": datos[0],
-        "Nombre": datos[1],
-        "Boletas": datos[2]
-    }
+    resultado = {"Numero": datos[0], "Nombre": datos[1], "Boletas": datos[2]}
 
     return pd.DataFrame(resultado)

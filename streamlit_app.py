@@ -38,6 +38,9 @@ if "numero_buscar_boleta" not in st.session_state:
 if "tabla_modificar" not in st.session_state:
     st.session_state.tabla_modificar = {}
 
+if "fecha_a_mostrar" not in st.session_state:
+    st.session_state.fecha_a_mostrar = "NoData"
+
 # paginas de usuario general
 paginas_generales: list = [
     st.Page("src/paginas/Menu.py", title="Menu", icon="🏠"),
@@ -50,7 +53,7 @@ paginas_generales: list = [
     st.Page("src/paginas/Anotaciones.py", title="Anotaciones", icon="📘"),
     st.Page("src/paginas/VerSocios.py", title="Ver Usuarios", icon="🔎"),
     st.Page("src/paginas/Registros.py", title="Registros", icon="📚"),
-    st.Page("src/paginas/DocumentosFondo.py", title="Documentos", icon="📄")
+    st.Page("src/paginas/DocumentosFondo.py", title="Documentos", icon="📄"),
 ]
 
 # paginas de el modo administardor
@@ -76,7 +79,7 @@ archivos_elementales: list = [
 dict_general: dict = {}
 
 # cargar las paginas al diccionario
-try: # revisar si existen la base de datos
+try:  # revisar si existen la base de datos
     with open("Fondo.db", "r") as f:
         f.close()
 
@@ -87,7 +90,7 @@ try: # revisar si existen la base de datos
     else:
         dict_general["Paginas Administrativas"] = ingresar_admin
 
-except FileExistsError: # proceso si no existe
+except FileExistsError:  # proceso si no existe
     dict_general["Paginas Generales"] = archivos_elementales
 
 # cargar las paginas para la vista

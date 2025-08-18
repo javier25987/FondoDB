@@ -47,11 +47,12 @@ def entregar_boletas(index: int, boletas: list, rifa: str):
 
     st.divider()
 
-    if st.button("Entregar boletas"):
+    if st.button("Entregar"):
         cargar_usuarios_a_boletas(index, boletas, rifa)
         fg.hacer_apunte(
-            "RIFAS", f"las boletas [{boletas}] fueron entregadas al usuario {index}"
+            "RIFAS", f"las boletas {boletas} fueron entregadas al usuario {index}"
         )
+        st.rerun()
 
 
 @st.dialog("Pago de boletas")

@@ -8,10 +8,7 @@ st.subheader("Buscar:")
 cols = st.columns(2, vertical_alignment="bottom")
 
 with cols[0]:
-    usuario_buscar: int = st.selectbox(
-        "Numero de usuario:",
-        ft.obtener_usuarios()
-    )
+    usuario_buscar: int = st.selectbox("Numero de usuario:", ft.obtener_usuarios())
 
 with cols[1]:
     cols_1 = st.columns(2)
@@ -27,12 +24,6 @@ with cols[1]:
 st.divider()
 
 if st.session_state.numero_transf < 0:
-    st.table(
-        ft.mostrar_transferencias_todo()
-    )
+    st.table(ft.mostrar_transferencias_todo())
 else:
-    st.table(
-        ft.mostrar_transferencias(
-            st.session_state.numero_transf
-        )
-    )
+    st.table(ft.mostrar_transferencias(st.session_state.numero_transf))

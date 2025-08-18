@@ -348,9 +348,7 @@ with tab[6]:
 
     with col7_2[0]:
         st.subheader("Enlace de el repositorio")
-        st.write(f"Enlace actual: {
-            c_sql.obtener_ajuste("enlace repo", False)
-        }")
+        st.write(f"Enlace actual: {c_sql.obtener_ajuste("enlace repo", False)}")
 
     with col7_2[1]:
         n_enlace: str = st.text_input("Nuevo enlace:")

@@ -1,4 +1,3 @@
-import src.funciones.general as fg
 import src.funciones.menu as fm
 import src.sql.conect as c_sql
 import streamlit as st
