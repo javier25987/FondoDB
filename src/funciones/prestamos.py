@@ -340,6 +340,8 @@ def escribir_prestamo(
         f" con deudas de ({','.join(map(str, deudas_fiadores))})."
     )
 
+    apunte: str = f"el usuario:{index} solicito un prestamo por {valor:,} mas detalles en la pagina del usuario"
+
     interes: int = c_sql.obtener_ajuste("interes m tope")
 
     if valor > c_sql.obtener_ajuste("tope intereses"):
@@ -367,6 +369,8 @@ def escribir_prestamo(
     deudas_fiadores = "#".join(map(str, deudas_fiadores)) if deudas_fiadores else "n"
     calendario = calendario_de_meses()
 
+    interes_prestamo: int = int(valor*interes/100)
+
     cursor.execute(
         """
         INSERT INTO prestamos_hechos (
@@ -377,13 +381,14 @@ def escribir_prestamo(
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
-        (index, 1, interes, 0, 0, valor, fiadores, deudas_fiadores, calendario, 0, 0),
+        (index, 1, interes, 0, 0, valor - interes_prestamo, fiadores, deudas_fiadores, calendario, 0, interes_prestamo),
     )
 
     conexion.commit()
     conexion.close()
 
     fa.realizar_anotacion(index, anotacion_final, 0, "GENERAL")
+    fg.hacer_apunte("PRESTAMOS", apunte)
 
 
 @st.dialog("Formulario de prestamo")
@@ -531,6 +536,7 @@ def pagar_un_prestamo(index: int, monto: int, codigo: int) -> None:
 
     # hacer anotacion
     fa.realizar_anotacion(index, anotacion, 0, "GENERAL")
+    fg.hacer_apunte("PRESTAMOS", apunte)
 
 
 def obtener_deuda_total(codigo: int) -> int:
