@@ -46,5 +46,5 @@ def transferir_las_deudas() -> None:
 
 
 if __name__ == "__main__":
-    # pasar_boletas()
+    #pasar_boletas()
     transferir_las_deudas()

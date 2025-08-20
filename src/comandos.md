@@ -19,3 +19,10 @@ INSERT INTO <tabla> (
 )
 VALUES (<valor1>, <valor2>, <valor3>, ...)
 ```
+
+## Desactivar todos los usuarios
+
+```sql
+UPDATE informacion_general
+SET estado = 1
+```

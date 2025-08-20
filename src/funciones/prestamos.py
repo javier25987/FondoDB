@@ -4,6 +4,7 @@ import src.sql.conect as c_sql
 import streamlit as st
 import sqlite3 as sql
 import pandas as pd
+import webbrowser
 import datetime
 import time
 
@@ -200,52 +201,12 @@ def consultar_capital_usuario(index: int) -> int:
 
 
 def hacer_carta_de_prestamo() -> None:
-    ahora: datetime = datetime.datetime.now()
-    fecha_hora_str: str = ahora.strftime("%Y/%m/%d %H:%M")
+    webbrowser.open_new("./src/text/carta.pdf")
 
-    carta: str = f"""
-        <p>{fecha_hora_str}</p>
-        <p>
-            Señores de el fondo, yo __________________________________ usuari@ № _______ del fondo San 
-            Javier identificado con cedula de ciudadania № _________________ solicito un prestamo por 
-            el valor de __________________, con el interes de ______ %, tengo la intencion de pagar el
-            prestamo en _______ mes(es), si mi dinero no llegase a ser suficiente solicito como fiador(es)
-            a (...), con sus respectivas deudas especificadas acontinuacion:
-        </p>
-        <ul>
-            <li>Nombre:</li>
-            <li>Puesto:</li>
-            <li>Deuda:</li>
-        </ul>
-        <ul>
-            <li>Nombre:</li>
-            <li>Puesto:</li>
-            <li>Deuda:</li>
-        </ul>
-        <ul>
-            <li>Nombre:</li>
-            <li>Puesto:</li>
-            <li>Deuda:</li>
-        </ul>
-        <pre>
-
-
-
-
-
-    _________________________                         _________________________
-      usuario de el fondo                                    tesorero
-        </pre>
-    """
-
-    with open("src/text/index.txt", "w", encoding="utf-8") as f:
-        f.write(carta)
-        f.close()
-
-    st.toast(
-        "El documento ha sido creado, lo puede consultar en la seccion 'Documentos'",
-        icon="✏️",
-    )
+    # st.toast(
+    #     "El documento ha sido creado, lo rpuede consultar en la seccion 'Documentos'",
+    #     icon="✏️",
+    # )
 
 
 def rectificar_viavilidad(
@@ -303,10 +264,15 @@ def rectificar_viavilidad(
     return True, ""
 
 
-def calendario_de_meses() -> str:
+def calendario_de_meses(fecha_actual: "datetime" = "") -> str:
     fecha_de_cierre = c_sql.obtener_ajuste("fecha de cierre", False)
     fecha_de_cierre: datetime = datetime.datetime(*map(int, fecha_de_cierre.split("-")))
-    ahora: datetime = datetime.datetime.now()
+
+    if fecha_actual == "":
+        ahora: "datetime" = datetime.datetime.now()
+    else:
+        ahora = fecha_actual
+
     fechas: list = []
 
     dias_memoria: int = ahora.day

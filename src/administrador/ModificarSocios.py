@@ -1,12 +1,16 @@
 import src.funciones.modificarsocios as fm
 import streamlit as st
+import time
 
 st.title("Modificar Usuarios")
 
 key: int = 0
 
 tabs = st.tabs(
-    ["Añadir usuario", "Realizar consultas", "Ver estructura DB", "Comandos SQL"]
+    [
+        "Añadir usuario", "Realizar consultas", "Ver estructura DB",
+        "Comandos SQL", "Fechas de Prestamos"
+    ]
 )
 
 with tabs[0]:
@@ -68,3 +72,23 @@ with tabs[2]:
 
 with tabs[3]:
     st.markdown(fm.leer_comandos())
+
+with tabs[4]:
+    col_fechas = st.columns(2)
+
+    with col_fechas[0]:
+        codigo_de_prestamo = st.selectbox(
+            "Codigo del prestamo a modificar:",
+            fm.consultar_codigos()
+        )
+
+    with col_fechas[1]:
+        nueva_fecha = st.date_input(
+            "Fecha de inicio del prestamo:"
+        )
+
+    if st.button("Corregir fechas"):
+        fm.corregir_fecha(codigo_de_prestamo, nueva_fecha)
+        st.balloons()
+        time.sleep(1)
+        st.rerun()

@@ -1,3 +1,4 @@
+import src.funciones.prestamos as fp
 import streamlit as st
 import sqlite3 as sql
 import pandas as pd
@@ -97,3 +98,33 @@ def leer_comandos() -> str:
         f.close()
 
     return "".join(archivos)
+
+def consultar_codigos() -> list[str]:
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    cursor.execute("SELECT codigo FROM prestamos_hechos")
+    codigos = cursor.fetchall()
+
+    conexion.close()
+
+    return [i[0] for i in codigos]
+
+
+def corregir_fecha(codigo: str, fecha) -> None:
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    nuevas_fechas = fp.calendario_de_meses(fecha)
+
+    cursor.execute(
+        """
+        UPDATE prestamos_hechos
+        SET fechas_de_pago = ?
+        WHERE codigo = ?
+        """, (nuevas_fechas, codigo)
+    )
+    
+    conexion.commit()
+    conexion.close()
+
