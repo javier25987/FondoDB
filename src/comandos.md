@@ -24,5 +24,5 @@ VALUES (<valor1>, <valor2>, <valor3>, ...)
 
 ```sql
 UPDATE informacion_general
-SET estado = 1
+SET estado = **1**
 ```
