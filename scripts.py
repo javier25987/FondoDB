@@ -45,6 +45,25 @@ def transferir_las_deudas() -> None:
     conexion.close()
 
 
+def crear_tabla_boletas(numero_tabla: int):
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    cursor.execute(
+        f"""
+        CREATE TABLE boletas_rifa_{numero_tabla} (
+            idx INTEGER,
+            boleta TEXT,
+            dada_a INTEGER
+        )
+        """
+    )
+
+    conexion.commit()
+
+
+
 if __name__ == "__main__":
     #pasar_boletas()
-    transferir_las_deudas()
+    #transferir_las_deudas()
+    crear_tabla_boletas(2)

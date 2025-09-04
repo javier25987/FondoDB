@@ -76,10 +76,12 @@ def abrir_usuario(index: int) -> tuple[bool, str]:
 
     return True, ""
 
+def filter_str(x: str):
+    if x == "n":
+        return " "
+    return x
 
 def tablas_para_cuotas_y_multas(index: int):
-    funct = lambda x: " " if x == "n" else x
-
     calendario: list[str] = list(
         map(lambda x: x[:-3], c_sql.obtener_ajuste("calendario", False).split("_"))
     )
@@ -95,7 +97,7 @@ def tablas_para_cuotas_y_multas(index: int):
     cuotas += [""] * (50 - len(cuotas))
 
     numeros: list[str] = list(map(str, range(1, 51)))
-    multas: list[str] = list(map(funct, list(multas)))
+    multas: list[str] = list(map(filter_str, list(multas)))
 
     return pd.DataFrame(
         {
@@ -183,50 +185,31 @@ def crear_nuevo_cheque(
     total_multas: int = multas_pagadas * valor_multa * puestos
     total_cuotas: int = cuotas_pagadas * valor_cuota * puestos
 
-    cheque: str = f"""
-        <h1>Fondo San Javier</h1>
-        <hr>
-        <ul>
-            <li>Nombre:{nombre}</li>
-            <li>Numero:{index}</li>
-            <li>Puestos:{puestos}</li>
-        </ul>
-        <hr>
-        <ul>
-            <li>Multas pagadas:{multas_pagadas}</li>
-            <li>Valor multa:{valor_multa:,}</li>
-            <li>TOTAL multas:{total_multas:,}</li>
-        </ul>
-        <hr>
-        <ul>
-            <li>Cuotas pagadas:{cuotas_pagadas}</li>
-            <li>Valor cuota:{valor_cuota:,}</li>
-            <li>TOTAL cuotas:{total_cuotas:,}</li>
-        </ul>
-        <hr>
-        <ul>
-            <li>Metodo de pago:{"Efect" if pago_efect else "Transf"}</li>
-            <li>Total pagado:{total_multas + total_cuotas:,}</li>
-        </ul>
-        <hr>
-        <ul>
-            <li>Fecha:{datetime.datetime.now().strftime("%Y/%m/%d")}</li>
-            <li>Hora:{datetime.datetime.now().strftime("%H:%M")}</li>
-        </ul>
+    cheque: str = f"""#let nombre = "{nombre}"
+#let numero = "{index}"
+#let puestos = "{puestos}"
+#let multas_pagadas = "{multas_pagadas}"
+#let valor_multa = "{valor_multa:,}"
+#let total_multas = "{total_multas:,}"
+#let cuotas_pagadas = "{cuotas_pagadas}"
+#let valor_cuota = "{valor_cuota:,}"
+#let total_cuotas = "{total_cuotas:,}"
+#let Metodo_de_pago = "{"Efect" if pago_efect else "Transf"}"
+#let total_pagado = "{total_multas + total_cuotas:,}"
+#let fecha = "{datetime.datetime.now().strftime("%Y/%m/%d")}"
+#let hora = "{datetime.datetime.now().strftime("%H:%M")}"
     """
 
-    with open("src/text/index.txt", "w", encoding="utf_8") as f:
+    with open("src/text/var_cheque.typ", "w", encoding="utf_8") as f:
         f.write(cheque)
         f.close()
 
-    with open("src/text/cheque_de_cuotas.txt", "w", encoding="utf_8") as f:
-        f.write(cheque)
-        f.close()
+    fg.ejecutar_comando_git(["typst", "compile", "./src/text/cheque.typ"])
 
-    st.toast(
-        "El documento ha sido creado, lo puede consultar en la seccion 'Documentos'",
-        icon="✏️",
-    )
+    # st.toast(
+    #     "El documento ha sido creado, lo puede consultar en la seccion 'Documentos'",
+    #     icon="✏️",
+    # )
 
 
 def registrar_transferencia(index: int, total: int) -> None:

@@ -2,7 +2,7 @@ import src.funciones.prestamos as fp
 import src.funciones.general as fg
 import src.sql.conect as c_sql
 import streamlit as st
-import os
+import webbrowser
 
 ranura_actual: str = st.session_state.ranura_actual
 
@@ -80,9 +80,7 @@ with tab[0]:
 with tab[1]:
     st.subheader("Carta de solicitud: ")
     if st.button("Hacer carta"):
-        with st.spinner("Abriendo carta"):
-            fp.hacer_carta_de_prestamo()
-            os.system("notepad.exe src/text/carta_prestamo.txt")
+        webbrowser.open_new("./src/text/carta.pdf")
     st.divider()
 
     st.subheader("Formato de solicitud: ")

@@ -1,6 +1,7 @@
 import src.funciones.cuotas as fc
 import src.sql.conect as c_sql
 import streamlit as st
+import webbrowser
 
 if c_sql.obtener_ajuste("calendario", False) == "n":
     st.info("El calendario aun no ha sido creado", icon="ℹ️")
@@ -73,16 +74,7 @@ if cols_2[1].button("Iniciar proceso de pago"):
         fc.formulario_de_pago(index, cuotas_a_pagar, multas_a_pagar, modo_de_pago)
 
 st.divider()
-if st.button("Solicitar ultimo cheque"):
-    with open("src/text/cheque_de_cuotas.txt", "r", encoding="utf_8") as f:
-        archivo = f.readlines()
-        f.close()
+if st.button("Ver ultimo cheque"):
+    webbrowser.open_new("./src/text/cheque.pdf")
 
-    with open("src/text/index.txt", "w", encoding="utf_8") as f:
-        f.write("".join(archivo))
-        f.close()
-
-    st.toast(
-        "El documento ha sido creado, lo puede consultar en la seccion 'Documentos'",
-        icon="✏️",
-    )
+# rwy8l7

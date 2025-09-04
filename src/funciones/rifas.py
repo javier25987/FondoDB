@@ -83,6 +83,7 @@ def consultar_boletas_usr(index: int, rifa: str) -> list[str]:
     cursor.execute(f"SELECT boleta FROM boletas_rifa_{rifa} WHERE dada_a = {index}")
 
     boletas = cursor.fetchall()
+    conexion.close()
 
     return list(map(lambda x: x[0], boletas))
 

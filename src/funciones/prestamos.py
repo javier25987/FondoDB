@@ -4,7 +4,6 @@ import src.sql.conect as c_sql
 import streamlit as st
 import sqlite3 as sql
 import pandas as pd
-import webbrowser
 import datetime
 import time
 
@@ -198,15 +197,6 @@ def consultar_capital_usuario(index: int) -> int:
     conexion.close()
 
     return dato if dato is not None else 0
-
-
-def hacer_carta_de_prestamo() -> None:
-    webbrowser.open_new("./src/text/carta.pdf")
-
-    # st.toast(
-    #     "El documento ha sido creado, lo rpuede consultar en la seccion 'Documentos'",
-    #     icon="✏️",
-    # )
 
 
 def rectificar_viavilidad(

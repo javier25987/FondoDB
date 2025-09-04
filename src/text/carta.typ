@@ -1,6 +1,5 @@
 #set text(lang: "es", size: 14pt,)
 #set par(justify: true)
-#set table.vline(stroke: 1pt)
 
 #align(center)[= Solicitud De Prestamo]
 
@@ -27,9 +26,12 @@ Señores de el fondo, yo `___________________________` usuari@ № `_______` del
 \
 
 #grid(
-  columns: (50%, 50%), align: (center, center)
+  columns: (50%, 50%), 
+  align: (center, center)
 )[
-  `_________________________`\ usurio del fondo
+  `_________________________`\ 
+  usurio del fondo
 ][
-  `_________________________`\ tesorero
+  `_________________________`\ 
+  tesorero
 ]

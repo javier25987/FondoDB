@@ -29,13 +29,12 @@ with tabs[0]:
 
     with cols_act[0]:
         boletas_selecionadas = st.multiselect(
-            "boletas disponibles:", fr.consultar_boletas_libres(-1, "1")
+            "boletas disponibles:", fr.consultar_boletas_libres(-1, "2")
         )
 
         if st.button("Entregar boletas"):
-            pass
-            # st.balloons()
-            # fr.entregar_boletas(index, boletas_selecionadas, "1")
+            st.balloons()
+            fr.entregar_boletas(index, boletas_selecionadas, "2")
 
 
 with tabs[1]:

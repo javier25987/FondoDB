@@ -58,6 +58,7 @@ paginas_generales: list = [
 
 # paginas de el modo administardor
 paginas_de_adiministrador: list = [
+    st.Page("src/administrador/IngresarBoletas.py", title="Insertar Boletas", icon="📋"),
     st.Page(
         "src/administrador/ModificarSocios.py", title="Modificar Usuarios", icon="📖"
     ),
