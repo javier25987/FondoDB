@@ -16,5 +16,5 @@ with columnas[1]:
         st.session_state.fecha_a_mostrar = fecha_elegida
 
 if st.session_state.fecha_a_mostrar != "NoData":
-    for fch, hor, sec, apt in fa.consultar_anotaciones(st.session_state.fecha_a_mostrar):
-        st.markdown(f"* [{fch} {hor} **{sec}**] {apt}")
+    for hor, sec, apt in fa.consultar_anotaciones(st.session_state.fecha_a_mostrar):
+        st.markdown(f"* [{hor} **{sec}**] {apt}")

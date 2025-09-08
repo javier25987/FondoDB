@@ -1,17 +1,20 @@
 import streamlit as st
 import src.funciones.ingresar_boletas as fi
+import src.funciones.rifas as fr
 
 tabla_de_boletas: str = "boletas_rifa_2"
 ultimo_numero = [] # esto en teoria tiene que ser un stack pero me da pereza implementarlo
 
 st.info(
-    f"Todas las boletas que se deseen ingresar se guardaran en la tabla {tabla_de_boletas}",
+    f"Todas las boletas que se deseen ingresar se guardaran en la tabla `{tabla_de_boletas}`",
     icon="ℹ️"
 )
 
 cols = st.columns(2)
 
 with cols[0]:
+    st.subheader("Agregar boleta")
+
     cols_boletas = st.columns(4)
 
     for columna, numero in zip(cols_boletas, range(1, 5)):
@@ -36,7 +39,22 @@ with cols[0]:
         else:
             st.toast("El formato de las boletas no es el correcto, por favor rectifique que sea correcto.", icon="🚨")
 
-        
+    st.divider()
+
+    st.subheader("Eliminar boleta")
+
+    cols_eli = st.columns(2, vertical_alignment="bottom")
+
+    with cols_eli[0]:
+        boleta_eli = st.selectbox(
+            "seleccione la boleta a eliminar:",
+            fr.consultar_boletas_libres(-1, tabla_de_boletas)
+        )
+
+    with cols_eli[1]:
+        if st.button("Eliminar boleta"):
+            fi.eliminar_boleta(boleta_eli, tabla_de_boletas)
+            st.rerun()
 
 
 with cols[1]:

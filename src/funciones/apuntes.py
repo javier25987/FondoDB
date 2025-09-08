@@ -14,7 +14,7 @@ def fechas_disponibles() -> list:
 def consultar_anotaciones(fecha: str) -> list:
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
-    cursor.execute(f"SELECT * FROM apuntes WHERE fecha = '{fecha}'")
+    cursor.execute(f"SELECT hora, seccion, contenido FROM apuntes WHERE fecha = '{fecha}'")
     datos = cursor.fetchall()
     conexion.close()
 

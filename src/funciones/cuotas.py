@@ -288,7 +288,7 @@ def formulario_de_pago(
 
         fg.hacer_apunte(
             "CUOTAS", 
-            f"el usuario:{index} pago  cuotas:{cuotas}, multas:{multas}, mediante:{metodo_de_pago}"
+            f"el usuario:{index} pago  cuotas:{cuotas}, multas:{multas}, mediante:{metodo_de_pago}, TOTAL: {total_a_pagar:,}"
         )
 
         st.rerun()

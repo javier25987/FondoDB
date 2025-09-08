@@ -336,8 +336,10 @@ def escribir_prestamo(
             cargar_intereses, interes_generado
         )
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (index, 1, interes, 0, 0, valor - interes_prestamo, fiadores, deudas_fiadores, calendario, 0, interes_prestamo),
+        """, (
+            index, 1, interes, 0, 0, valor - interes_prestamo, 
+            fiadores, deudas_fiadores, calendario, 0, interes_prestamo
+        )
     )
 
     conexion.commit()

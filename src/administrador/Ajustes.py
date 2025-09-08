@@ -374,95 +374,47 @@ with tab[6]:
         key += 1
 
 with tab[7]:
-    n_rifas = ("1", "2", "3", "4")
-    st.header("Ver rifas:")
-    tab_8 = st.tabs(["Rifa 1", "Rifa 2", "Rifa 3", "Rifa 4"])
-    count: int = 0
-    for i in n_rifas:
-        with tab_8[count]:
-            for j in fa.crear_tablas_rifas(i):
-                st.table(j)
-        count += 1
-
+    st.table(fa.obtener_tabla_rifas())
     st.divider()
-    st.header("Modificar rifas:")
 
-    col8_1 = st.columns(3)
+    cols_crear_rifas = st.columns(2)
 
-    with col8_1[0]:
+    with cols_crear_rifas[0]:
         r_numero_de_boletas: int = st.number_input(
             "Numero de boletas:", step=1, value=0
         )
-        r_costo_de_boleta: int = st.number_input("Costo por boleta:", value=0, step=1)
-
-    with col8_1[1]:
-        r_numeros_por_boleta: int = st.number_input(
-            "Numeros por boleta:", step=1, value=0
+        r_costo_de_boleta: int = st.number_input(
+            "Costo por boleta:", value=0, step=1
         )
         r_costos_de_administracion: int = st.number_input(
             "Costos de administracion:", step=1, value=0
         )
 
-    with col8_1[2]:
-        r_boletas_por_talonario: int = st.number_input(
-            "Boletas por talonario:", value=0, step=1
+    with cols_crear_rifas[1]:
+        r_premio_1: int = st.number_input(
+            "Premio 1", value=0, step=1
         )
-        r_fecha_de_cierre = st.date_input("Fecha de cierre:")
+        r_premio_2: int = st.number_input(
+            "Premio 2", value=0, step=1
+        )
+        r_premio_3: int = st.number_input(
+            "Premio 3", value=0, step=1
+        )
+        r_premio_4: int = st.number_input(
+            "Premio 4", value=0, step=1
+        )
 
-    for i in range(1, r_numeros_por_boleta + 1):
-        with col8_1[(i - 1) % 3]:
-            st.number_input(f"Premio № {i}:", value=0, step=1, key=f"premio: {i}")
-
-    col8_2 = st.columns(2, vertical_alignment="bottom")
-
-    with col8_2[0]:
-        st.divider()
-        r_rifa = st.selectbox("Rifa que desea modificar:", n_rifas)
-
-    with col8_2[1]:
-        if st.button("Modificar rifa"):
-            premios: list[int] = []
-            for i in range(1, r_numeros_por_boleta + 1):
-                premios.append(st.session_state[f"premio: {i}"])
-            fa.cargar_datos_de_rifa(
-                r_rifa, r_numero_de_boletas, r_numeros_por_boleta,
-                r_boletas_por_talonario, r_costo_de_boleta,
-                r_costos_de_administracion, r_fecha_de_cierre,
-                premios,
-            )
-    st.divider()
-    st.header("(Des)Activar rifas:")
-
-    for i, j in zip(st.columns(4), n_rifas):
-        with i:
-            st.subheader(f"Rifa {j}:")
-            if c_sql.obtener_datos_rifas(j,"estado"):
-                st.write(f"La rifa {j} esta activa")
-            else:
-                st.write(f"La rifa {j} NO esta activa")
-
-            if st.button("Modificar", key=f"key: {key}"):
-                c_sql.guardar_valor(
-                    "datos_de_rifas",
-                    "estado",
-                    f"r{j}",
-                    not bool(c_sql.obtener_datos_rifas(j, "estado"))
-                )
-                fa.avisar()
-            key += 1
+    if st.button("Guardar rifa"):
+        premios: list = [r_premio_1, r_premio_2, r_premio_3, r_premio_4]
+        fa.cargar_datos_de_rifa(
+            r_numero_de_boletas, r_costo_de_boleta,
+            r_costos_de_administracion, premios
+        )
+        fa.avisar()
 
     st.divider()
     st.header("Cerrar rifas:")
     
-    for i, j in zip(st.columns(4), n_rifas):
-        with i:
-            st.subheader(f"Rifa {j}:")
-            if st.button("Cerrar rifa", key=f"key: {key}"):
-                cerrar_rifa = fa.cerrar_una_rifa(j)
-
-                if cerrar_rifa[0]:
-                    st.toast(cerrar_rifa[1], icon="✅")
-                else:
-                    st.toast(cerrar_rifa[1], icon="🚨")
-                    
-            key += 1
+    if st.button("Cerrar rifas"):
+        fa.cerrar_una_rifa()
+        fa.avisar()

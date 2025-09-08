@@ -1,6 +1,5 @@
-import src.funciones.general as fg
 import src.funciones.prestamos as fp
-import src.sql.conect as c_sql
+import src.funciones.general as fg
 import streamlit as st
 import sqlite3 as sql
 import pandas as pd
@@ -39,59 +38,39 @@ def avisar(rerun: bool = True):
         st.rerun()
 
 
-def crear_tablas_rifas(rifa: str) -> list:
+def obtener_tabla_rifas():
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
-    cursor.execute(
-        f"""
-        SELECT *
-        FROM datos_de_rifas
-        WHERE id = 'r{rifa}'
-        """
-    )
+    cursor.execute("SELECT * FROM datos_de_rifas")
 
-    datos = cursor.fetchall()[0]
-
+    datos = cursor.fetchall()
     conexion.close()
 
-    return [
-        pd.DataFrame(
-            {
-                "Numero de boletas": [f"{datos[2]:,}"],
-                "Numeros por boleta": [f"{datos[3]:,}"],
-                "Boletas por talonario": [f"{datos[6]:,}"],
-            }
-        ),
-        pd.DataFrame(
-            {
-                "Costo de boleta": [f"{datos[5]:,}"],
-                "Costos de administracion": [f"{datos[7]:,}"],
-                "Ganancias por boleta": [f"{datos[8]:,}"],
-            }
-        ),
-        pd.DataFrame({"Fecha de cierre": [datos[9]]}),
-        pd.DataFrame(
-            {
-                "Premios": map(
-                    lambda x: f"{int(x):,}" if x not in {"n", "", None} else x,
-                    datos[4].split("_"),
-                )
-            }
-        ),
-    ]
+    dict_table = {
+        "id": [],
+        "numero_de_boletas": [],
+        "premios": [],
+        "costos_de_boleta": [],
+        "costos_de_administracion": [],
+        "ganancia_por_boleta": []
+    }
+
+    for _id, n_boletas, pemios, c_boleta, c_admis, g_boleta in datos:
+        dict_table["id"].append(_id)
+        dict_table["numero_de_boletas"].append(n_boletas)
+        dict_table["premios"].append(pemios)
+        dict_table["costos_de_boleta"].append(c_boleta)
+        dict_table["costos_de_administracion"].append(c_admis)
+        dict_table["ganancia_por_boleta"].append(g_boleta)
+
+    return pd.DataFrame(dict_table)
 
 
 def cargar_datos_de_rifa(
-    rifa: str,
-    numero_de_boletas: int,
-    numeros_por_boleta: int,
-    boletas_por_talonario: int,
-    costo_de_boleta: int,
-    costo_de_administracion: int,
-    fecha_de_cierre,
-    premios: list[int],
-) -> None:
+    numero_de_boletas: int, costo_de_boleta: int,
+    costo_de_administracion: int, premios: list[int]
+):
     suma_de_premios = sum(premios)
     ganancias_por_boleta = (numero_de_boletas * costo_de_boleta) - (
         costo_de_administracion + suma_de_premios
@@ -101,29 +80,30 @@ def cargar_datos_de_rifa(
 
     premios = "_".join([str(i) for i in premios])
 
+    _id: int = 1
+
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
+    cursor.execute("SELECT MAX(id) FROM datos_de_rifas")
+
+    _id: int = cursor.fetchall()[0][0]
+
+    if _id is None:
+        _id = 0
+
+    _id += 1
+
     cursor.execute(
         f"""
-        UPDATE datos_de_rifas
-        SET 
-            numero_de_boletas = ?, numeros_por_boleta = ?,
-            premios = ?, costo_de_boleta = ?, 
-            boletas_por_talonario = ?, costos_de_administracion = ?,
-            ganancia_por_boleta = ?, fecha_de_cierre = ?
-        WHERE rid = 'r{rifa}'
-        """,
-        (
-            numero_de_boletas,
-            numeros_por_boleta,
-            premios,
-            costo_de_boleta,
-            boletas_por_talonario,
-            costo_de_administracion,
-            ganancias_por_boleta,
-            fecha_de_cierre.strftime("%Y/%m/%d"),
-        ),
+        INSERT INTO datos_de_rifas (
+            id, numero_de_boletas, premios, costo_de_boleta,
+            costos_de_administracion, ganancia_por_boleta 
+        ) VALUES (
+            {_id}, {numero_de_boletas}, '{premios}', {costo_de_boleta},
+            {costo_de_administracion}, {ganancias_por_boleta}
+        )
+        """
     )
 
     conexion.commit()
@@ -134,49 +114,31 @@ def cargar_datos_de_rifa(
     st.rerun()
 
 
-def cerrar_una_rifa(rifa: str):
+def cerrar_una_rifa():
     """
-    aca estoy haciendo la rectificacion y el proceso de una en ves de usar 2 funciones
+    Esta funcion mira todas las deudas vigentes en la tabla `deudas_rifa`
+    y las carga como un prestamo a cada usuario, 
     """
 
-    if not bool(c_sql.obtener_datos_rifas(rifa, "estado")):
-        return False, "La rifa no esta activa"
-
-    fecha_de_cierre = fg.string_a_fecha(
-        c_sql.obtener_datos_rifas(rifa, "fecha_de_cierre")
-    )
-
-    if fecha_de_cierre > datetime.datetime.now():
-        return False, "No se cumple la fecha de cierre"
+    # obtener todas las deudas mayores a cero
 
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
-    cursor.execute(
-        f"""
-        SELECT id, r{rifa}_deudas
-        FROM rifas
-        WHERE r{rifa}_deudas > 0
-
-        """
-    )
+    cursor.execute("SELECT * FROM deudas_rifa WHERE deuda > 0")
 
     datos = cursor.fetchall()
 
-    for i in datos:
-        fp.escribir_prestamo(i[0], i[1], [], [])
+    # hacer todos los prestamos
 
-        st.toast(f"💵 Se genero un prestamo por {i[1]:,}para el usuario № {i[0]}")
+    for idx, deuda in datos:
+        fp.escribir_prestamo(idx, deuda, [], [])
 
-    cursor.execute(
-        f"""
-        UPDATE datos_de_rifas
-        SET estado = 0
-        WHERE id = 'r{rifa}'
-        """
-    )
+    # limpiar toda la tabla de `deudas_rifa`\
+
+    cursor.execute("UPDATE deudas_rifa SET deuda = 0")
 
     conexion.commit()
     conexion.close()
 
-    return True, "Rifa cerrada correctamente"
+    

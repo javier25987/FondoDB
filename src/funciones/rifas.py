@@ -18,12 +18,24 @@ def cargar_usuarios_a_boletas(usr: int, boletas: list, rifa: str):
     for i in boletas:
         cursor.execute(
             f"""
-            UPDATE boletas_rifa_{rifa}
+            UPDATE {rifa}
             SET dada_a = ?
             WHERE idx = ?
             """,
             (usr, i),
         )
+
+    cursor.execute(
+        f"SELECT costo_de_boleta FROM datos_de_rifas WHERE id = {rifa[-1]}"
+    )
+
+    precio_boleta = cursor.fetchall()[0][0]
+
+    total_boletas = precio_boleta * len(boletas)
+
+    cursor.execute(
+        f"UPDATE deudas_rifa SET deuda = deuda + {total_boletas} WHERE id = {usr}"
+    )
 
     conexion.commit()
     conexion.close()
@@ -31,6 +43,9 @@ def cargar_usuarios_a_boletas(usr: int, boletas: list, rifa: str):
 
 @st.dialog("Entrega de talonario")
 def entregar_boletas(index: int, boletas: list, rifa: str):
+    """
+    Falta incluir las deudas por entregar una boleta
+    """
     st.header(f"№ {index} - {c_sql.obtener_ig('nombre', index).title()}")
     st.divider()
 
@@ -50,7 +65,7 @@ def entregar_boletas(index: int, boletas: list, rifa: str):
     if st.button("Entregar"):
         cargar_usuarios_a_boletas(index, boletas, rifa)
         fg.hacer_apunte(
-            "RIFAS", f"las boletas {boletas} fueron entregadas al usuario {index}"
+            "RIFAS", f"las boletas: {",".join(boletas)} fueron entregadas a {index}"
         )
         st.rerun()
 
@@ -76,11 +91,11 @@ def pago_de_boletas(index: int, pago: int, rifa: str):
         st.rerun()
 
 
-def consultar_boletas_usr(index: int, rifa: str) -> list[str]:
+def consultar_boletas_usr(index: int, tabla_de_rifa: str) -> list[str]:
     conexion = sqlite3.connect("Fondo.db")
     cursor = conexion.cursor()
 
-    cursor.execute(f"SELECT boleta FROM boletas_rifa_{rifa} WHERE dada_a = {index}")
+    cursor.execute(f"SELECT boleta FROM {tabla_de_rifa} WHERE dada_a = {index}")
 
     boletas = cursor.fetchall()
     conexion.close()
@@ -88,10 +103,42 @@ def consultar_boletas_usr(index: int, rifa: str) -> list[str]:
     return list(map(lambda x: x[0], boletas))
 
 
-def consultar_boletas_libres(index: int, rifa: str) -> list[str]:
+def consultar_boletas_libres(index: int, tabla_de_rifa: str) -> list[str]:
     conexion = sqlite3.connect("Fondo.db")
     cursor = conexion.cursor()
 
-    cursor.execute(f"SELECT idx FROM boletas_rifa_{rifa} WHERE dada_a = ?", (index,))
+    cursor.execute(f"SELECT idx FROM {tabla_de_rifa} WHERE dada_a = ?", (index,))
     boletas = cursor.fetchall()
     return list(map(lambda x: x[0], boletas))
+
+
+def rectificar_pago(usr: int, monto: int, monto_d: int) -> tuple[bool, str]:
+
+    if monto > monto_d:
+        return False, "No se puede pagar mas de lo que se debe."
+    if monto <= 0:
+        return False, "Para que pagar cero o menos?."
+
+    return True, ""
+
+
+@st.dialog("Pago de boletas:")
+def formlario_de_pago(usr: int, monto: int, monto_d: int):
+    st.header(f"№ {usr} - {c_sql.obtener_ig('nombre', usr).title()}")
+    st.divider()
+
+    st.table(
+        {
+            "Concepto": ["Deuda actual", "Dinero a pagar", "Nueva deuda"],
+            "Monto": [f"{monto_d:,}", f"{monto:,}", f"{monto_d - monto:,}"]
+        }
+    )
+
+    st.divider()
+    if st.button("Confirmar pago"):
+        fg.hacer_apunte(
+            "RIFAS",
+            f"El usuario {usr} ha pagado {monto}, en boletas. {monto_d:,} -> {monto_d - monto:,}"
+        )
+        c_sql.increment("deudas_rifa", "deuda", usr, -monto)
+        st.rerun()

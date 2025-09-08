@@ -80,104 +80,65 @@ def rectificar_numero(boleta_a_buscar: str, poscion_boleta: str) -> bool:
     if boleta_a_buscar == "":
         return False
 
-    if poscion_boleta is None:
-        return False
-
     return True
 
 
-def buscar_boleta(rifa_a_buscar: str, boleta_a_buscar: str, poscion_boleta: int):
-    """
-    esta funcion tan solo devuelve el usuario poeedor de la boleta
-    :param rifa_a_buscar:
-    :param boleta_a_buscar:
-    :param poscion_boleta:
-    :return:
-    """
+def buscar_boleta(rifa_a_buscar: str, boleta_a_buscar: str):
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
     cursor.execute(
         f"""
-            SELECT r.id, ig.nombre, r.r{rifa_a_buscar}_boletas
-            From rifas r
-            JOIN informacion_general ig
-            ON
-                ig.id = r.id
-            WHERE 
-                r.r{rifa_a_buscar}_boletas LIKE '%{boleta_a_buscar}%'
-            """
-    )
-
-    datos = cursor.fetchall()
-    conexion.close()
-
-    datos = list(zip(*datos))
-
-    if len(datos[0]) <= 0:
-        return -1
-    if len(datos[0]) == 1:
-        return datos[0][0]
-
-    for i in datos[0]:
-        objetos: list[str] = datos[2][i].split("_")
-        new_objetos: list = []
-
-        for n in objetos:
-            new_objetos += [m.split("?") for m in n.split("#")]
-
-        for k in new_objetos:
-            if k[poscion_boleta - 1] == boleta_a_buscar:
-                return i
-
-    return -1  # esto solo se activa si hay algun error
-
-
-def mostrar_boletas(index: int, rifa_a_buscar: str) -> pd.DataFrame:
-    conexion = sql.connect("Fondo.db")
-    cursor = conexion.cursor()
-
-    cursor.execute(
-        f"""
-        SELECT r.id, ig.nombre, r.r{rifa_a_buscar}_boletas
-        From rifas r
-        JOIN informacion_general ig
-        ON
-            ig.id = r.id
-        WHERE
-            r.id = {index}
+        SELECT ig.id, ig.nombre, br.boleta
+        FROM {rifa_a_buscar} br
+        JOIN informacion_general ig 
+        ON br.dada_a = ig.id 
+        WHERE br.boleta LIKE '%{boleta_a_buscar}%'
         """
     )
 
     datos = cursor.fetchall()
     conexion.close()
 
-    datos = list(zip(*datos))
+    tabla = {
+        "Puesto": [],
+        "Nombre": [],
+        "Boleta": []
+    }
 
-    resultado = {"Numero": datos[0], "Nombre": datos[1], "Boletas": datos[2]}
+    for p, n, b in datos:
+        tabla["Puesto"].append(p)
+        tabla["Nombre"].append(n)
+        tabla["Boleta"].append(b)
 
-    return pd.DataFrame(resultado)
+    return pd.DataFrame(tabla)
 
 
-def mostrar_boletas_todo(rifa_a_buscar: str) -> pd.DataFrame:
+def mostrar_todas_boletas(rifa_a_buscar: str) -> pd.DataFrame:
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
     cursor.execute(
         f"""
-            SELECT r.id, ig.nombre, r.r{rifa_a_buscar}_boletas
-            From rifas r
-            JOIN informacion_general ig
-            ON
-                ig.id = r.id
-            """
+        SELECT ig.id, ig.nombre, br.boleta
+        FROM {rifa_a_buscar} br
+        JOIN informacion_general ig 
+        ON br.dada_a = ig.id 
+        """
     )
 
     datos = cursor.fetchall()
     conexion.close()
 
-    datos = list(zip(*datos))
+    tabla = {
+        "Puesto": [],
+        "Nombre": [],
+        "Boleta": []
+    }
 
-    resultado = {"Numero": datos[0], "Nombre": datos[1], "Boletas": datos[2]}
+    for p, n, b in datos:
+        tabla["Puesto"].append(p)
+        tabla["Nombre"].append(n)
+        tabla["Boleta"].append(b)
 
-    return pd.DataFrame(resultado)
+    return pd.DataFrame(tabla)

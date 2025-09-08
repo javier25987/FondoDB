@@ -53,11 +53,23 @@ def rectificar_boleta(boletas) -> bool:
     for i in boletas:
         try:
             numero = int(i)
-        except:  # noqa: E722
+        except TypeError:
             return False
         
         if 0 > numero or numero > 1000:
             return False
         
     return True
+
+
+def eliminar_boleta(boleta: int, rifa_eliminar: str):
+    connexion = sql.connect("Fondo.db")
+    cursor = connexion.cursor()
+
+    cursor.execute(f"DELETE FROM {rifa_eliminar} WHERE idx = {boleta}")
+
+    connexion.commit()
+    connexion.close()
+
+
     

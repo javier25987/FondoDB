@@ -32,8 +32,8 @@ if "numero_transf" not in st.session_state:
 if "nombre_para_busqueda" not in st.session_state:
     st.session_state.nombre_para_busqueda = ""
 
-if "numero_buscar_boleta" not in st.session_state:
-    st.session_state.numero_buscar_boleta = -1
+if "numero_buscar_boleta" not in st.session_state: # este valo dice si hay que mostrar todas las boletas o no, lo dejo como un bool
+    st.session_state.numero_buscar_boleta = True
 
 if "tabla_modificar" not in st.session_state:
     st.session_state.tabla_modificar = {}
@@ -53,7 +53,7 @@ paginas_generales: list = [
     st.Page("src/paginas/Anotaciones.py", title="Anotaciones", icon="📘"),
     st.Page("src/paginas/VerSocios.py", title="Ver Usuarios", icon="🔎"),
     st.Page("src/paginas/Registros.py", title="Registros", icon="📚"),
-    st.Page("src/paginas/DocumentosFondo.py", title="Documentos", icon="📄"),
+    # st.Page("src/paginas/DocumentosFondo.py", title="Documentos", icon="📄"),
 ]
 
 # paginas de el modo administardor

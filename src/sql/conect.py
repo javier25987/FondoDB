@@ -38,24 +38,6 @@ def obtener_cuotas(colum: str, index: int):
     return dato
 
 
-def obtener_rifas(colum: str, index: int):
-    conexion = sql.connect("Fondo.db")
-    cursor = conexion.cursor()
-
-    cursor.execute(
-        f"""
-        SELECT {colum}
-        FROM rifas
-        WHERE id = {index}
-        """
-    )
-
-    dato = cursor.fetchall()[0][0]
-    conexion.close()
-
-    return dato
-
-
 def obtener_prestamos(colum: str, index: int) -> str | int:
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
