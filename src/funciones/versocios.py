@@ -115,30 +115,14 @@ def buscar_boleta(rifa_a_buscar: str, boleta_a_buscar: str):
 
 
 def mostrar_todas_boletas(rifa_a_buscar: str) -> pd.DataFrame:
-    conexion = sql.connect("Fondo.db")
-    cursor = conexion.cursor()
+    query = f"SELECT ig.id, ig.nombre, br.boleta FROM {rifa_a_buscar} br JOIN informacion_general ig ON br.dada_a = ig.id"
+    
+    with sql.connect("Fondo.db") as conexion:
+        df = pd.read_sql_query(query, conexion)
 
-    cursor.execute(
-        f"""
-        SELECT ig.id, ig.nombre, br.boleta
-        FROM {rifa_a_buscar} br
-        JOIN informacion_general ig 
-        ON br.dada_a = ig.id 
-        """
-    )
-
-    datos = cursor.fetchall()
-    conexion.close()
-
-    tabla = {
-        "Puesto": [],
-        "Nombre": [],
-        "Boleta": []
-    }
-
-    for p, n, b in datos:
-        tabla["Puesto"].append(p)
-        tabla["Nombre"].append(n)
-        tabla["Boleta"].append(b)
-
-    return pd.DataFrame(tabla)
+    if df.empty:
+        return pd.DataFrame()
+    
+    # Renombrar columnas si quieres mantener nombres personalizados
+    df.columns = ["Puesto", "Nombre", "Boleta"]
+    return df

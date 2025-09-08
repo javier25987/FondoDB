@@ -19,42 +19,28 @@ def insert_boleta(numeros: list, nombre_tabla: str):
     conexion.close()
 
 
-def consultar_boletas_rifa(nombre_tabla: str) -> list[str]:
-    conexion = sql.connect("Fondo.db")
-    cursor = conexion.cursor()
+def consultar_boletas_rifa(nombre_tabla: str):
+    with sql.connect("Fondo.db") as conexion:
+        df = pd.read_sql_query(f"SELECT * FROM {nombre_tabla}", conexion)
 
-    cursor.execute(f"SELECT * FROM {nombre_tabla}")
-
-    boletas = cursor.fetchall()
-    conexion.close()
-
-    if not boletas:
+    if df.empty:
         return pd.DataFrame(), False
     
-    numero = []
-    boleta = []
-    dada_a = []
-
-    for i, j, k in boletas:
-        numero.append(i)
-        boleta.append(j)
-        dada_a.append(k)
-
-    return pd.DataFrame(
-        {
-            "Numero": numero,
-            "Boleta": boleta,
-            "Dada a": dada_a,
-        }
-    ), True
+    df.columns = ["Numero", "Boleta", "Dada a"]
+    return df, True
 
 
 def rectificar_boleta(boletas) -> bool:
     for i in boletas:
-        try:
-            numero = int(i)
-        except TypeError:
+        if i == "":
             return False
+        
+        try:
+            int(i)
+        except:  # noqa: E722
+            return False
+        
+        numero = int(i)
         
         if 0 > numero or numero > 1000:
             return False

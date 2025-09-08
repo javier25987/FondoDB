@@ -31,7 +31,7 @@ with tabs[2]:
         "Seleccione la tabla en la que desea buscar:", ("boletas_rifa_1", "boletas_rifa_2")
     )
 
-    col4_1 = st.columns(2, vertical_alignment="bottom")
+    col4_1 = st.columns([0.5, 0.25, 0.25], vertical_alignment="bottom")
 
     with col4_1[0]:
         boleta_a_buscar: str = st.text_input("Numero que desea buscar en la boleta:")
@@ -42,8 +42,14 @@ with tabs[2]:
                 st.session_state.numero_buscar_boleta = True
             else:
                 st.session_state.numero_buscar_boleta = False
+    
+    with col4_1[2]:
+        if st.button("Mostrar todo"):
+            st.session_state.numero_buscar_boleta = True
 
     st.divider()
 
-    if not st.session_state.numero_buscar_boleta:
+    if st.session_state.numero_buscar_boleta:
+        st.table(fv.mostrar_todas_boletas(rifa_a_buscar))
+    else:
         st.table(fv.buscar_boleta(rifa_a_buscar, boleta_a_buscar))
