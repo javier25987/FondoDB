@@ -66,4 +66,5 @@ def crear_tabla_boletas(numero_tabla: int):
 if __name__ == "__main__":
     #pasar_boletas()
     #transferir_las_deudas()
-    crear_tabla_boletas(2)
+    # crear_tabla_boletas(2)
+    pass

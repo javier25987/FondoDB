@@ -28,7 +28,8 @@ with tabs[1]:
 
 with tabs[2]:
     rifa_a_buscar: str = st.selectbox(
-        "Seleccione la tabla en la que desea buscar:", ("boletas_rifa_1", "boletas_rifa_2")
+        "Seleccione la tabla en la que desea buscar:",
+        ("boletas_rifa_1", "boletas_rifa_2"),
     )
 
     col4_1 = st.columns([0.5, 0.25, 0.25], vertical_alignment="bottom")
@@ -42,7 +43,7 @@ with tabs[2]:
                 st.session_state.numero_buscar_boleta = True
             else:
                 st.session_state.numero_buscar_boleta = False
-    
+
     with col4_1[2]:
         if st.button("Mostrar todo"):
             st.session_state.numero_buscar_boleta = True
@@ -53,3 +54,4 @@ with tabs[2]:
         st.table(fv.mostrar_todas_boletas(rifa_a_buscar))
     else:
         st.table(fv.buscar_boleta(rifa_a_buscar, boleta_a_buscar))
+

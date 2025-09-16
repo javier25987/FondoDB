@@ -63,9 +63,19 @@ def contar_multas(comp: str) -> int:
     if comp == "n":
         return 0
 
-    des_comp = list(map(lambda x: list(map(int, x.split(":"))), comp.split("_")))
+    des_comp = list( # hcemos una lista con todos los elementos
+        map(
+            lambda x: list( # esto nos ayuda a hacer una lista de listas
+                map(
+                    int, # hacenmos todo un numero
+                    x.split(":") # separamos cada llave entre index:multas
+                )
+            ),
+            comp.split("_") # separamos todos los valores para indentalos
+        )
+    ) # -> [[2, 3], [2, 3], ...] ejemplo de la salida de esto
 
-    return sum(j for _, j in des_comp)
+    return sum(j for _, j in des_comp) # sumanmos todos los segundos elementos de cada minilista
 
 
 def abrir_usuario(index: int) -> tuple[bool, str]:
@@ -76,14 +86,14 @@ def abrir_usuario(index: int) -> tuple[bool, str]:
 
     return True, ""
 
-def filter_str(x: str):
-    if x == "n":
-        return " "
-    return x
 
 def tablas_para_cuotas_y_multas(index: int):
     calendario: list[str] = list(
-        map(lambda x: x[:-3], c_sql.obtener_ajuste("calendario", False).split("_"))
+        map(
+            lambda x: x[:-3], # eliminamos la hoora de corte en el calendario
+            c_sql.obtener_ajuste("calendario", False).split("_")
+            # llamamos el calendario y lo separamos por semanas
+        )
     )
 
     multas: str = c_sql.obtener_cuotas("multas", index)
@@ -97,7 +107,12 @@ def tablas_para_cuotas_y_multas(index: int):
     cuotas += [""] * (50 - len(cuotas))
 
     numeros: list[str] = list(map(str, range(1, 51)))
-    multas: list[str] = list(map(filter_str, list(multas)))
+    multas: list[str] = list(
+        map(
+            lambda x: " " if x == "n" else x,
+            list(multas)
+        )
+    )
 
     return pd.DataFrame(
         {
