@@ -6,15 +6,39 @@ import pandas as pd
 import datetime
 
 
-def sumar_una_multa(s: str, i: int) -> str:
-    s = list(s)
+def abrir_usuario(index: int) -> tuple[bool, str]:
+    if 0 > index >= c_sql.obtener_ajuste("usuarios"):
+        return False, "El numero de usuario esta fuera de rango"
 
-    value = 0 if s[i] == "n" else int(s[i])
-    value += 1
+    rectificar_cuotas(index)
 
-    s[i] = str(value)
+    return True, ""
 
-    return "".join(s)
+
+def descomprimir_to_list(comp: str) -> list[list[int, int], ]:
+    if comp == "n":
+        return []
+
+    return list( # hcemos una lista con todos los elementos
+        map(
+            lambda x: list( # esto nos ayuda a hacer una lista de listas
+                map(
+                    int, # hacenmos todo un numero
+                    x.split(":") # separamos cada llave entre index:multas
+                )
+            ),
+            comp.split("_") # separamos todos los valores para indentalos
+        )
+    ) # -> [[2, 3], [2, 3], ...] ejemplo de la salida de esto
+
+
+def comprimir_to_str(lst: list[list[int, int], ]) -> str:
+    result: list[str, ] = []
+
+    for idx, value in lst:
+        result.append(f"{idx}:{value}")
+
+    return "_".join(result)
 
 
 def rectificar_cuotas(index: int) -> None:
@@ -31,31 +55,45 @@ def rectificar_cuotas(index: int) -> None:
     fecha_actual = datetime.datetime.now()
 
     semanas_a_revisar: int = sum(map(lambda x: int(x < fecha_actual), calendario))
-
     semanas_revisadas: int = c_sql.obtener_cuotas("revisiones", index)
 
     if semanas_a_revisar > semanas_revisadas:
-        multas: str = c_sql.obtener_cuotas("multas", index)
-        multas = multas_comp_str(multas)
+        # begin: crear las multas como una lista
+        multas_compr: str = c_sql.obtener_cuotas("multas", index)
+        multas_descomp: list[list[int, int], ] = descomprimir_to_list(multas_compr)
+
+        multas: list[int, ] = [0]*50
+
+        for idx, value in multas_descomp:
+            multas[idx] += value
+
+        # end
 
         cobrar_multas: bool = bool(c_sql.obtener_ajuste("cobrar multas"))
-        # anular_usuarios: bool = bool(c_sql.obtener_ajuste("anular usuarios"))
+
         pagas: int = c_sql.obtener_cuotas("pagas", index)
         deudas: int = 0
+        bloqueos: list[int, ] = list(map(int, c_sql.obtener_cuotas("bloqueos").split("_")))
 
         for i in range(50):
-            if calendario[i] <= fecha_actual:
-                if i >= pagas:
-                    if cobrar_multas:
-                        multas = sumar_una_multa(multas, i)
-                    deudas += 1
-            else:
+            if calendario[i] > fecha_actual:
                 break
 
+            if i in bloqueos:
+                multas[i] += 1
+                continue
+
+            if pagas < 1:
+                if cobrar_multas:
+                    multas[i] += 1
+                deudas += 1
+
+            pagas -= 1
+                
         c_sql.guardar_valor("cuotas", "adeudas", index, deudas)
         c_sql.guardar_valor("cuotas", "revisiones", index, semanas_a_revisar)
 
-        multas = multas_str_comp(multas)
+        multas = comprimir_to_str(multas)
         c_sql.guardar_valor_t("cuotas", "multas", index, multas)
 
 
@@ -63,28 +101,9 @@ def contar_multas(comp: str) -> int:
     if comp == "n":
         return 0
 
-    des_comp = list( # hcemos una lista con todos los elementos
-        map(
-            lambda x: list( # esto nos ayuda a hacer una lista de listas
-                map(
-                    int, # hacenmos todo un numero
-                    x.split(":") # separamos cada llave entre index:multas
-                )
-            ),
-            comp.split("_") # separamos todos los valores para indentalos
-        )
-    ) # -> [[2, 3], [2, 3], ...] ejemplo de la salida de esto
+    des_comp = descomprimir_to_list(comp)
 
     return sum(j for _, j in des_comp) # sumanmos todos los segundos elementos de cada minilista
-
-
-def abrir_usuario(index: int) -> tuple[bool, str]:
-    if 0 > index >= c_sql.obtener_ajuste("usuarios"):
-        return False, "El numero de usuario esta fuera de rango"
-
-    rectificar_cuotas(index)
-
-    return True, ""
 
 
 def tablas_para_cuotas_y_multas(index: int):
@@ -95,24 +114,43 @@ def tablas_para_cuotas_y_multas(index: int):
             # llamamos el calendario y lo separamos por semanas
         )
     )
-
-    multas: str = c_sql.obtener_cuotas("multas", index)
-    multas = multas_comp_str(multas)
+    numeros: list[str] = list(map(str, range(1, 51)))
 
     cuotas_pagas: int = c_sql.obtener_cuotas("pagas", index)
     cuotas_adeud: int = c_sql.obtener_cuotas("adeudas", index)
 
-    cuotas: str = ["✅ pago"] * cuotas_pagas + ["🚨 debe"] * cuotas_adeud
+    bloqueos:str = c_sql.obtener_cuotas("bloqueos", index).split("_")
 
-    cuotas += [""] * (50 - len(cuotas))
+    bloqueos: list[int, ] = [] if bloqueos == ["n"] else list(map(int, bloqueos))
+    
+    cuotas: str = [""]*50
 
-    numeros: list[str] = list(map(str, range(1, 51)))
-    multas: list[str] = list(
-        map(
-            lambda x: " " if x == "n" else x,
-            list(multas)
-        )
-    )
+    for i in bloqueos:
+        cuotas[i] = "🔒 bloc"
+
+    cdx = 0
+
+    while cuotas_pagas > 0:
+        if cuotas[cdx] == "":
+            cuotas[cdx] = "✅ pago"
+
+            cuotas_pagas -= 1
+        cdx += 1
+
+    while cuotas_adeud > 0:
+        if cuotas[cdx] == "":
+            cuotas[cdx] = "🚨 debe"
+
+            cuotas_adeud -= 1
+        cdx += 1
+    
+    multas_compt: str = c_sql.obtener_cuotas("multas", index)
+    multas_compt: list[list[int, int], ] = descomprimir_to_list(multas_compt)
+
+    multas: list[str] = [""]*50
+
+    for idx, value in multas_compt:
+        multas[idx] = str(value)
 
     return pd.DataFrame(
         {
@@ -309,26 +347,6 @@ def formulario_de_pago(
         st.rerun()
 
 
-def multas_comp_str(comp: str) -> str:
-    if comp == "n":
-        return "n" * 50
-
-    des_comp = list(map(lambda x: list(map(int, x.split(":"))), comp.split("_")))
-
-    result = ["n"] * 50
-
-    for i, j in des_comp:
-        result[i] = str(j)
-
-    return "".join(result)
-
-
-def multas_str_comp(multas: str) -> dict[int:int]:
-    result = [f"{i}:{multas[i]}" for i in range(len(multas)) if multas[i] != "n"]
-
-    return "_".join(result) if len(result) != 0 else "n"
-
-
 def rectificar_boton_iniciar_pago(cuotas: int, multas: int, index: int):
     if cuotas == 0 and multas == 0:
         return False, "No se va a pagar nada"
@@ -337,3 +355,26 @@ def rectificar_boton_iniciar_pago(cuotas: int, multas: int, index: int):
         return False, "El usuario no esta activo"
 
     return True, ""
+
+
+def des_bloquear_semanas(index: int, bloc: list[int, ]) -> None:
+    bloqueos: list[str, ] = c_sql.obtener_cuotas("bloqueos", index)\
+        .split("_")
+    if bloqueos[0] == "n":
+        bloqueos = []
+    else:
+        bloqueos: list[int, ] = list(map(int, bloqueos))
+
+    bloc -= 1
+
+    if bloc in bloqueos:
+        bloqueos.remove(bloc)
+    else:
+        bloqueos.append(bloc)
+
+    bloqueos = "_".join(map(str, bloqueos))
+
+    if bloqueos == "":
+        bloqueos = "n"
+        
+    c_sql.guardar_valor_t("cuotas", "bloqueos", index, bloqueos)
