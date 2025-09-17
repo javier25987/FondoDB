@@ -1,0 +1,5 @@
+# viejos archivos
+*.csv
+*.db
+
+scripts.py
