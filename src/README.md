@@ -52,5 +52,3 @@ vacio
 Este proyecto fue hecho para mi padre al cual le agradezo todo lo que me ha dado y la educacion que me esta pagando ya que gracias a eso obtuve los conocimientos para realizar este proyecto,
 
 GRACIAS PAPA
-
-> **NOTA:** no es necesario que el programa calcule todo asincronicamente, lo puede hacer el siguiente dia al iniciarse

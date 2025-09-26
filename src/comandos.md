@@ -10,7 +10,6 @@ WHERE <condicion>
 
 > El `WHERE` sirve para filtrar todas las filas que se deseen afectar, de no hacerlo todas se veran afectadas
 
-
 ## Insertar datos
 
 ```sql

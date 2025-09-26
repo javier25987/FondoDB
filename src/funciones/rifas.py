@@ -25,9 +25,7 @@ def cargar_usuarios_a_boletas(usr: int, boletas: list, rifa: str):
             (usr, i),
         )
 
-    cursor.execute(
-        f"SELECT costo_de_boleta FROM datos_de_rifas WHERE id = {rifa[-1]}"
-    )
+    cursor.execute(f"SELECT costo_de_boleta FROM datos_de_rifas WHERE id = {rifa[-1]}")
 
     precio_boleta = cursor.fetchall()[0][0]
 
@@ -65,7 +63,7 @@ def entregar_boletas(index: int, boletas: list, rifa: str):
     if st.button("Entregar"):
         cargar_usuarios_a_boletas(index, boletas, rifa)
         fg.hacer_apunte(
-            "RIFAS", f"las boletas: {",".join(boletas)} fueron entregadas a {index}"
+            "RIFAS", f"las boletas: {','.join(boletas)} fueron entregadas a {index}"
         )
         st.rerun()
 
@@ -108,12 +106,12 @@ def consultar_boletas_libres(index: int, tabla_de_rifa: str) -> list[str]:
     cursor = conexion.cursor()
 
     cursor.execute(f"SELECT idx FROM {tabla_de_rifa} WHERE dada_a = ?", (index,))
+
     boletas = cursor.fetchall()
     return list(map(lambda x: x[0], boletas))
 
 
-def rectificar_pago(usr: int, monto: int, monto_d: int) -> tuple[bool, str]:
-
+def rectificar_pago(monto: int, monto_d: int) -> tuple[bool, str]:
     if monto > monto_d:
         return False, "No se puede pagar mas de lo que se debe."
     if monto <= 0:
@@ -130,7 +128,7 @@ def formlario_de_pago(usr: int, monto: int, monto_d: int):
     st.table(
         {
             "Concepto": ["Deuda actual", "Dinero a pagar", "Nueva deuda"],
-            "Monto": [f"{monto_d:,}", f"{monto:,}", f"{monto_d - monto:,}"]
+            "Monto": [f"{monto_d:,}", f"{monto:,}", f"{monto_d - monto:,}"],
         }
     )
 
@@ -138,7 +136,8 @@ def formlario_de_pago(usr: int, monto: int, monto_d: int):
     if st.button("Confirmar pago"):
         fg.hacer_apunte(
             "RIFAS",
-            f"El usuario {usr} ha pagado {monto}, en boletas. {monto_d:,} -> {monto_d - monto:,}"
+            f"El usuario {usr} ha pagado {monto}, en boletas. {monto_d:,} -> {
+                monto_d - monto:,}",
         )
         c_sql.increment("deudas_rifa", "deuda", usr, -monto)
         st.rerun()

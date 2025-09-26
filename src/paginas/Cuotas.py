@@ -87,10 +87,7 @@ st.subheader("🔒 Cuotas a (des)bloquear")
 bloc_col = st.columns(2, vertical_alignment="bottom")
 
 with bloc_col[0]:
-    sem_bloc = st.selectbox(
-        "Semanas que desea (des)bloquear:", 
-        range(1, 51)
-    )
+    sem_bloc = st.selectbox("Semanas que desea (des)bloquear:", range(1, 51))
 
 with bloc_col[1]:
     if st.button("(Des)Bloquear"):

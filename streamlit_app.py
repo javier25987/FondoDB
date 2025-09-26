@@ -20,9 +20,6 @@ if "db_exist" not in st.session_state:
 if "usuario" not in st.session_state:
     st.session_state.usuario = -1
 
-if "ranura_actual" not in st.session_state:
-    st.session_state.ranura_actual = "1"
-
 if "mes_registro" not in st.session_state:
     st.session_state.mes_registro = 0
 

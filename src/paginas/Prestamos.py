@@ -4,8 +4,6 @@ import src.sql.conect as c_sql
 import streamlit as st
 import webbrowser
 
-ranura_actual: str = st.session_state.ranura_actual
-
 index: int = st.session_state.usuario
 
 index_de_usuario: int = st.sidebar.number_input("Numero de usuario: ", value=0, step=1)
