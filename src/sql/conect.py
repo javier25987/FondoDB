@@ -20,7 +20,7 @@ def obtener_ig(colum: str, index: int):
     return dato
 
 
-def obtener_cuotas(colum: str, index: int):
+def obtener_cuotas(colum: str, index: int) -> str | int:
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 

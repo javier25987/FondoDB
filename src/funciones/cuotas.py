@@ -15,7 +15,7 @@ def abrir_usuario(index: int) -> tuple[bool, str]:
     return True, ""
 
 
-def descomprimir_to_list(comp: str) -> list[list[int, int], ]:
+def descomprimir_to_list(comp: str) -> list[list[int, ], ]:
     if comp == "n":
         return []
 
@@ -32,7 +32,7 @@ def descomprimir_to_list(comp: str) -> list[list[int, int], ]:
     ) # -> [[2, 3], [2, 3], ...] ejemplo de la salida de esto
 
 
-def comprimir_to_str(lst: list[list[int, int], ]) -> str:
+def comprimir_to_str(lst: list[list[int, ], ]) -> str:
     result: list[str, ] = []
 
     for idx, value in lst:
@@ -60,7 +60,7 @@ def rectificar_cuotas(index: int) -> None:
     if semanas_a_revisar > semanas_revisadas:
         # begin: crear las multas como una lista
         multas_compr: str = c_sql.obtener_cuotas("multas", index)
-        multas_descomp: list[list[int, int], ] = descomprimir_to_list(multas_compr)
+        multas_descomp: list[list[int, ], ] = descomprimir_to_list(multas_compr)
 
         multas: list[int, ] = [0]*50
 
@@ -73,7 +73,7 @@ def rectificar_cuotas(index: int) -> None:
 
         pagas: int = c_sql.obtener_cuotas("pagas", index)
         deudas: int = 0
-        bloqueos: list[int, ] = list(map(int, c_sql.obtener_cuotas("bloqueos").split("_")))
+        bloqueos: list[int, ] = list(map(int, c_sql.obtener_cuotas("bloqueos", index).split("_")))
 
         for i in range(50):
             if calendario[i] > fecha_actual:
@@ -93,7 +93,7 @@ def rectificar_cuotas(index: int) -> None:
         c_sql.guardar_valor("cuotas", "adeudas", index, deudas)
         c_sql.guardar_valor("cuotas", "revisiones", index, semanas_a_revisar)
 
-        multas = comprimir_to_str(multas)
+        multas: str = comprimir_to_str(multas)
         c_sql.guardar_valor_t("cuotas", "multas", index, multas)
 
 
@@ -106,7 +106,7 @@ def contar_multas(comp: str) -> int:
     return sum(j for _, j in des_comp) # sumanmos todos los segundos elementos de cada minilista
 
 
-def tablas_para_cuotas_y_multas(index: int):
+def tablas_para_cuotas_y_multas(index: int) -> tuple[pd.DataFrame, pd.DataFrame]:
     calendario: list[str] = list(
         map(
             lambda x: x[:-3], # eliminamos la hoora de corte en el calendario
@@ -119,11 +119,11 @@ def tablas_para_cuotas_y_multas(index: int):
     cuotas_pagas: int = c_sql.obtener_cuotas("pagas", index)
     cuotas_adeud: int = c_sql.obtener_cuotas("adeudas", index)
 
-    bloqueos:str = c_sql.obtener_cuotas("bloqueos", index).split("_")
+    bloqueos: list[str, ] = c_sql.obtener_cuotas("bloqueos", index).split("_")
 
     bloqueos: list[int, ] = [] if bloqueos == ["n"] else list(map(int, bloqueos))
     
-    cuotas: str = [""]*50
+    cuotas: list[str, ] = [""]*50
 
     for i in bloqueos:
         cuotas[i] = "🔒 bloc"
@@ -145,7 +145,7 @@ def tablas_para_cuotas_y_multas(index: int):
         cdx += 1
     
     multas_compt: str = c_sql.obtener_cuotas("multas", index)
-    multas_compt: list[list[int, int], ] = descomprimir_to_list(multas_compt)
+    multas_compt: list[list[int, ], ] = descomprimir_to_list(multas_compt)
 
     multas: list[str] = [""]*50
 
