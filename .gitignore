@@ -2,4 +2,5 @@
 *.csv
 *.db
 
+.idea
 scripts.py
