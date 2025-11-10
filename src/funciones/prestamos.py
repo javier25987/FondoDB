@@ -27,7 +27,7 @@ def crear_tablas_de_prestamos(index: int):
             ph.codigo, ph.interes, ph.intereses_vencidos, 
             ph.interes_generado, ph.deuda, ph.fiadores,  
             ph.deuda_con_fiadores, (ph.intereses_vencidos + ph.deuda),
-            ph.fechas_de_pago
+            ph.fechas_de_pago, ph.deuda_inicial
         FROM prestamos_hechos ph
         JOIN informacion_general ig
         ON
@@ -46,16 +46,22 @@ def crear_tablas_de_prestamos(index: int):
 
     return [
         [
+            f"Codigo de prestamo: {i[0]}",
             pd.DataFrame(
                 {
-                    "Codigo de prestamo": [i[0]],
-                    "Interes [...]%": [i[1]],
+                    "Interes": [f"{i[1]}%"],
                     "Intereses vencidos": [f"{i[2]:,}"],
                     "Interes generado": [f"{i[3]:,}"],
-                    "Deuda": [f"{i[4]:,}"],
-                    "Deuda TOTAL": [f"{i[7]:,}"],
                 }
             ),
+            pd.DataFrame(
+                {
+                    "Deuda": [f"{i[4]:,}"],
+                    "Valor del prestamo": [f"{i[9]:,}"],
+                    "% Pago": [f"{(i[4]/i[9])*100}%"],
+                }
+            ),
+            f"Deuda TOTAL: {i[7]:,}",
             pd.DataFrame(
                 {"Fiadores": i[5].split("#"), "Deudas con fiadores": i[6].split("#")}
             ),
@@ -380,6 +386,10 @@ def pagar_un_prestamo(index: int, monto: int, codigo: int) -> None:
     anotacion: str = f"se ha pagado {monto:,} al prestamo numero {codigo}"
     apunte: str = f"usuario:{index} pago {monto:,} al prestamo:{codigo} (codigo)"
 
+    # hacer anotacion
+    fa.realizar_anotacion(index, anotacion, 0, "GENERAL")
+    fg.hacer_apunte("PRESTAMOS", apunte)
+
     # obtener datos
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
@@ -491,10 +501,6 @@ def pagar_un_prestamo(index: int, monto: int, codigo: int) -> None:
 
     for i, j in zip(index_1, index_2):
         c_sql.increment("prestamos", "deudas_por_fiador", i, j)
-
-    # hacer anotacion
-    fa.realizar_anotacion(index, anotacion, 0, "GENERAL")
-    fg.hacer_apunte("PRESTAMOS", apunte)
 
 
 def obtener_deuda_total(codigo: int) -> int:

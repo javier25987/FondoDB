@@ -5,12 +5,12 @@ from tqdm import tqdm
 import datetime
 
 
-def abrir_fecha() -> dict:
+def abrir_fecha() -> datetime.datetime:
     with open("src/asuntos/fecha.txt", "r") as f:
         fecha: str = f.read()
         f.close()
 
-    fecha = datetime.datetime(*map(int, fecha.split("/")))
+    fecha: datetime.datetime = datetime.datetime(*map(int, fecha.split("/")))
 
     return fecha
 
@@ -73,15 +73,13 @@ def rectificar_todo() -> None:
         # anular_usuarios = bool(c_sql.obtener_ajuste("anular usuarios"))
 
         print("Rectificando multas")
-        for index in tqdm(
-            range(c_sql.obtener_ajuste("usuarios"))
-        ):  # iteramos sobre todos los usuarios
+        for index in tqdm(range(c_sql.obtener_ajuste("usuarios"))):  # iteramos sobre todos los usuarios
             # rectificamos para cuotas
             semanas_revisadas: int = c_sql.obtener_cuotas("revisiones", index)
 
             if semanas_a_revisar > semanas_revisadas:
                 multas: str = c_sql.obtener_cuotas("multas", index)
-                multas = fc.multas_comp_str(multas)
+                multas: list[list[int, ], ] = fc.descomprimir_to_list(multas)
                 pagas: int = c_sql.obtener_cuotas("pagas", index)
                 deudas: int = 0
 
@@ -94,7 +92,7 @@ def rectificar_todo() -> None:
                     else:
                         break
 
-                multas = fc.multas_str_comp(multas)
+                multas: str = fc.comprimir_to_str(multas)
                 c_sql.guardar_valor_t("cuotas", "multas", index, multas)
                 c_sql.guardar_valor("cuotas", "adeudas", index, deudas)
                 c_sql.guardar_valor("cuotas", "revisiones", index, semanas_a_revisar)

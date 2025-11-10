@@ -31,15 +31,18 @@ with tab[0]:
     mostrar_opcion_pago: bool = False
     no_hay_prestamos: bool = True
 
-    for i, j, k in tablas_de_prestamos:
+    for prst in tablas_de_prestamos:
         cols_t = st.columns([8, 2])
 
         with cols_t[0]:
-            st.table(i)
-            st.table(j)
+            st.subheader(prst[0])
+            st.table(prst[1])
+            st.table(prst[2])
+            st.subheader(prst[3])
+            st.table(prst[4])
 
         with cols_t[1]:
-            st.table(k)
+            st.table(prst[5])
 
         no_hay_prestamos = False
         mostrar_opcion_pago = True

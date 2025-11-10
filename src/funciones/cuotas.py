@@ -33,6 +33,9 @@ def descomprimir_to_list(comp: str) -> list[list[int, ], ]:
 
 
 def comprimir_to_str(lst: list[list[int, ], ]) -> str:
+    if len(lst) == 0:
+        return "n"
+    
     result: list[str, ] = []
 
     for idx, value in lst:
@@ -73,7 +76,9 @@ def rectificar_cuotas(index: int) -> None:
 
         pagas: int = c_sql.obtener_cuotas("pagas", index)
         deudas: int = 0
-        bloqueos: list[int, ] = list(map(int, c_sql.obtener_cuotas("bloqueos", index).split("_")))
+
+        control_boqueos: list[str, ] = c_sql.obtener_cuotas("bloqueos", index).split("_")
+        bloqueos: list[int, ] = list(map(int, control_boqueos)) if control_boqueos[0] != "n" else []
 
         for i in range(50):
             if calendario[i] > fecha_actual:
@@ -92,6 +97,12 @@ def rectificar_cuotas(index: int) -> None:
                 
         c_sql.guardar_valor("cuotas", "adeudas", index, deudas)
         c_sql.guardar_valor("cuotas", "revisiones", index, semanas_a_revisar)
+
+        multas: list[list[int, ], ] = [
+            [idx, valor]
+            for idx, valor in enumerate(multas)
+            if valor != 0
+        ]
 
         multas: str = comprimir_to_str(multas)
         c_sql.guardar_valor_t("cuotas", "multas", index, multas)
@@ -147,24 +158,33 @@ def tablas_para_cuotas_y_multas(index: int) -> tuple[pd.DataFrame, pd.DataFrame]
     multas_compt: str = c_sql.obtener_cuotas("multas", index)
     multas_compt: list[list[int, ], ] = descomprimir_to_list(multas_compt)
 
-    multas: list[str] = [""]*50
+    multas_pgs: str = c_sql.obtener_cuotas("multas_pagas", index)
+    multas_pgs: list[list[int, ]] = descomprimir_to_list(multas_pgs)
+
+    multas: list[str, ] = [""]*50
+    multas_pagas: list[str, ] = [""]*50
 
     for idx, value in multas_compt:
         multas[idx] = str(value)
+
+    for idx, value in multas_pgs:
+        multas_pagas[idx] = str(value)
 
     return pd.DataFrame(
         {
             "cuota №": numeros[:25],
             "fechas": calendario[:25],
             "cuotas": cuotas[:25],
-            "multas": multas[:25],
+            "multas vigentes": multas[:25],
+            "multas pagas": multas_pagas[:25],
         }
     ), pd.DataFrame(
         {
             "cuota №": numeros[25:],
             "fechas": calendario[25:],
             "cuotas": cuotas[25:],
-            "multas": multas[25:],
+            "multas vigentes": multas[25:],
+            "multas pagas": multas_pagas[25:],
         }
     )
 
@@ -192,31 +212,58 @@ def pagar_n_cuotas(index: int, n: int) -> None:
     c_sql.increment("informacion_general", "capital", index, total)
 
 
-def descontar_n_multas(comp: str, n: int) -> str:
-    des_comp = list(map(lambda x: list(map(int, x.split(":"))), comp.split("_")))
+def descontar_n_multas(comp_multas: str, comp_multas_pagas, n: int) -> tuple[str, str]:
+    multas = [0]*50
+    multas_pagas = [0]*50
 
-    for i in range(len(des_comp)):
-        if des_comp[i][1] > n:
-            des_comp[i][1] -= n
+    for idx, num in descomprimir_to_list(comp_multas):
+        multas[idx] = num
+
+    for idx, num in descomprimir_to_list(comp_multas_pagas):
+        multas_pagas[idx] = num
+
+    for i in range(50):
+        if multas[i] == 0:
+            continue
+        if n < 1:
             break
+
+        if n >= multas[i]:
+            multas_pagas[i] += multas[i]
+            n -= multas[i]
+            multas[i] = 0
         else:
-            n -= des_comp[i][1]
-            des_comp[i][1] = 0
+            multas[i] -= n
+            multas_pagas[i] += n
+            break
 
-    salida = [f"{i}:{j}" for i, j in des_comp if j != 0]
+    result_multas: list[list[int, ]] = [
+        [i, multas[i]]
+        for i in range(50) 
+        if multas[i] != 0
+    ]
+    result_multas_pagas: list[list[int, ]] = [
+        [i, multas_pagas[i]]
+        for i in range(50) 
+        if multas_pagas[i] != 0
+    ]
 
-    return "_".join(salida) if len(salida) != 0 else "n"
+    return comprimir_to_str(result_multas), comprimir_to_str(result_multas_pagas)
 
 
 def pagar_n_multas(index: int, n: int) -> None:
     # NOTA: aca evito hacer una rectificacion de las multas a
-    # pagar ya que por defecto el programa muestra solo los
+    # pagar, ya que por defecto el programa muestra solo los
     # valores permitidos
 
     # pagamos las multas
     multas: str = c_sql.obtener_cuotas("multas", index)
-    multas = descontar_n_multas(multas, n)
+    multas_pagas: str = c_sql.obtener_cuotas("multas_pagas", index)
+
+    multas, multas_pagas = descontar_n_multas(multas, multas_pagas, n)
+
     c_sql.guardar_valor_t("cuotas", "multas", index, multas)
+    c_sql.guardar_valor_t("cuotas", "multas_pagas", index, multas_pagas)
 
     # sumamos a 'aporte_a_multas'
     valor_multa: int = c_sql.obtener_ajuste("valor multa")
@@ -287,6 +334,7 @@ def registrar_transferencia(index: int, total: int) -> None:
 def formulario_de_pago(
     index: int, cuotas: int, multas: int, metodo_de_pago: str
 ) -> None:
+
     st.header(f"№ {index} - {c_sql.obtener_ig('nombre', index)}")
     st.divider()
 

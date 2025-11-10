@@ -49,6 +49,8 @@ vacio
 
 ## Agradecimiento
 
-Este proyecto fue hecho para mi padre al cual le agradezo todo lo que me ha dado y la educacion que me esta pagando ya que gracias a eso obtuve los conocimientos para realizar este proyecto,
+Este proyecto fue hecho para mi padre y mi madre a los cuales les agradezo todo lo que me han dado y la educacion que me estan pagando ya que gracias a eso obtuve los conocimientos para realizar este proyecto,
 
-GRACIAS PAPA
+GRACIAS PAPA Y MAMA
+
+

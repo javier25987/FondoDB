@@ -1,13 +1,13 @@
 # importamos las bibliotecas
-import src.asuntos.rectificado as a_r
+# import src.asuntos.rectificado as a_r
 import streamlit as st
 
-# miramos si hay que rectificar
-if "todo_rectificado" not in st.session_state:
-    st.session_state.todo_rectificado = 1
-    a_r.rectificar_todo()
+# # miramos si hay que rectificar
+# if "todo_rectificado" not in st.session_state:
+#     st.session_state.todo_rectificado = 1
+#     a_r.rectificar_todo()
 
-# configuracion de el tamanio de la pagina
+# configuracion del tamanio de la pagina
 st.set_page_config(layout="wide")
 
 # creacion de variables para la gestion
@@ -73,7 +73,7 @@ archivos_elementales: list = [
     st.Page("src/session/files.py", title="Crear Archivos", icon=":material/settings:")
 ]
 
-# diccionario de paginas que se van a mostrar
+# diccionario de las páginas que se van a mostrar
 dict_general: dict = {}
 
 # cargar las paginas al diccionario
