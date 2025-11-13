@@ -58,7 +58,7 @@ def crear_tablas_de_prestamos(index: int):
                 {
                     "Deuda": [f"{i[4]:,}"],
                     "Valor del prestamo": [f"{i[9]:,}"],
-                    "% Pago": [f"{(i[4]/i[9])*100}%"],
+                    "% Pago": [f"{int((1 - i[4]/i[9])*100)}%"],
                 }
             ),
             f"Deuda TOTAL: {i[7]:,}",
@@ -339,12 +339,13 @@ def escribir_prestamo(
             id, estado, interes, intereses_vencidos,
             revisiones, deuda, fiadores,
             deuda_con_fiadores, fechas_de_pago,
-            cargar_intereses, interes_generado
+            cargar_intereses, interes_generado, deuda_inicial
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             index, 1, interes, 0, 0, valor - interes_prestamo, 
-            fiadores, deudas_fiadores, calendario, 0, interes_prestamo
+            fiadores, deudas_fiadores, calendario, 0, interes_prestamo,
+            valor
         )
     )
 
