@@ -1,5 +1,5 @@
 # import src.funciones.general as fg
-import src.sql.conect as c_sql
+import src.msql as msql
 import src.funciones.rifas as fr
 import streamlit as st
 
@@ -23,7 +23,7 @@ if index == -1:
     st.title("Usuario indeterminado")
     st.stop()
 
-st.title(f"№ {index} - {c_sql.obtener_ig('nombre', index).title()}")
+st.title(f"№ {index} - {msql.obtener_ig('nombre', index).title()}")
 
 tabs = st.tabs(["Rifa Actual", "Rifa 1"])
 
@@ -48,7 +48,7 @@ with tabs[0]:
     with cols_act[1]:
         st.subheader("Pagos por boletas:")
 
-        total_adeudado: int = c_sql.obtener_valor("deudas_rifa", "deuda", index)
+        total_adeudado: int = msql.obtener_valor("deudas_rifa", "deuda", index)
 
         total_a_pagar = st.number_input("Cantidad que desea pagar:", step=1, value=0)
 

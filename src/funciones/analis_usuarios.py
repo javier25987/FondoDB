@@ -1,6 +1,6 @@
 import src.funciones.cuotas as fc
 import datetime
-import src.sql.conect as c_sql
+import src.msql as msql
 import pandas as pd
 import sqlite3 as sql
 
@@ -43,7 +43,7 @@ def obtener_estado_de_cuenta(
 
 
 def abrir_usuario(idx: int) -> tuple[bool, str]:
-    if 0 > idx >= c_sql.obtener_ajuste("usuarios"):
+    if 0 > idx >= msql.obtener_ajuste("usuarios"):
         return False, "El numero de usuario esta fuera de rango"
 
     return True, ""

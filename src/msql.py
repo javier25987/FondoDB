@@ -1,68 +1,13 @@
 import sqlite3 as sql
 import datetime
 
-
-def obtener_ig(colum: str, index: int):
-    conexion = sql.connect("Fondo.db")
-    cursor = conexion.cursor()
-
-    cursor.execute(
-        f"""
-        SELECT {colum}
-        FROM informacion_general
-        WHERE id = {index}
-        """
-    )
-
-    dato = cursor.fetchall()[0][0]
-    conexion.close()
-
-    return dato
-
-
-def obtener_cuotas(colum: str, index: int) -> str | int:
-    conexion = sql.connect("Fondo.db")
-    cursor = conexion.cursor()
-
-    cursor.execute(
-        f"""
-        SELECT {colum}
-        FROM cuotas
-        WHERE id = {index}
-        """
-    )
-
-    dato = cursor.fetchall()[0][0]
-    conexion.close()
-
-    return dato
-
-
-def obtener_prestamos(colum: str, index: int) -> str | int:
-    conexion = sql.connect("Fondo.db")
-    cursor = conexion.cursor()
-
-    cursor.execute(
-        f"""
-        SELECT {colum}
-        FROM prestamos
-        WHERE id = {index}
-        """
-    )
-
-    dato = cursor.fetchall()[0][0]
-    conexion.close()
-
-    return dato
-
-
 def obtener_ajuste(nombre: str, is_num: bool = True):
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
     cursor.execute(
         f"""
-        SELECT {"valor_n" if is_num else "valor_a"}
+        SELECT {"valor_n" if is_num else "valor_t"}
         FROM ajustes
         WHERE ajuste = '{nombre}'
         """
@@ -74,7 +19,7 @@ def obtener_ajuste(nombre: str, is_num: bool = True):
     return resultado
 
 
-def guardar_ajuste(nombre: str, nuevo_valor: int) -> None:
+def guardar_ajuste_n(nombre: str, nuevo_valor: int) -> None:
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
@@ -97,7 +42,7 @@ def guardar_ajuste_t(nombre: str, nuevo_valor: int | str) -> None:
     cursor.execute(
         f"""
         UPDATE ajustes
-        SET valor_a = '{nuevo_valor}'
+        SET valor_t = '{nuevo_valor}'
         WHERE ajuste = '{nombre}'
         """
     )
@@ -106,7 +51,7 @@ def guardar_ajuste_t(nombre: str, nuevo_valor: int | str) -> None:
     conexion.close()
 
 
-def obtener_valor(tabla: str, columna: str, index: int) -> str | int:
+def obtener_valor(tabla: str, columna: str, index: int): # -> str | int:
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
@@ -124,7 +69,7 @@ def obtener_valor(tabla: str, columna: str, index: int) -> str | int:
     return valor
 
 
-def guardar_valor(tabla: str, columna: str, index: int, nuevo_valor: int) -> None:
+def guardar_valor_n(tabla: str, columna: str, index: int, nuevo_valor: int) -> None:
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
@@ -156,26 +101,14 @@ def guardar_valor_t(tabla: str, columna: str, index: int, nuevo_valor: str) -> N
     conexion.close()
 
 
-def increment(tabla: str, columna: str, index: int, incremento: int) -> None:
+def increment_int(tabla: str, columna: str, index: int, incremento: int) -> None:
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
     cursor.execute(
         f"""
-        SELECT {columna}
-        FROM {tabla}
-        WHERE id = {index}
-        """
-    )
-
-    valor = cursor.fetchall()[0][0]
-
-    valor += incremento
-
-    cursor.execute(
-        f"""
         UPDATE {tabla}
-        SET {columna} = {valor}
+        SET {columna} = {columna} + {incremento}
         WHERE id = {index}
         """
     )
@@ -225,42 +158,11 @@ def registo(incremento: int, is_ingeso: bool = True) -> None:
 
     cursor.execute(
         f"""
-        SELECT {columna}
-        FROM registros
-        WHERE fecha = '{fecha}'
-        """
-    )
-
-    valor = cursor.fetchall()
-    valor = valor[0][0]
-
-    valor += incremento
-
-    cursor.execute(
-        f"""
         UPDATE registros
-        SET {columna} = {valor}
+        SET {columna} = {columna} + {incremento}
         WHERE fecha = '{fecha}'
         """
     )
 
     conexion.commit()
     conexion.close()
-
-
-def obtener_datos_rifas(rifa: str, colum: str):
-    conexion = sql.connect("Fondo.db")
-    cursor = conexion.cursor()
-
-    cursor.execute(
-        f"""
-        SELECT {colum}
-        FROM datos_de_rifas
-        WHERE id = 'r{rifa}'
-        """
-    )
-
-    dato = cursor.fetchall()[0][0]
-    conexion.close()
-
-    return dato

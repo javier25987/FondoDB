@@ -1,4 +1,4 @@
-from src.sql.conect import obtener_ajuste
+from src.msql import obtener_ajuste
 import streamlit as st
 import time
 

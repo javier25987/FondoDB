@@ -1,5 +1,5 @@
 import src.funciones.cuotas as fc
-import src.sql.conect as c_sql
+import src.msql as msql
 import sqlite3 as sql
 from tqdm import tqdm
 import datetime
@@ -52,15 +52,12 @@ def rectificar_todo() -> None:
 
         # cargamos datos
 
-        conexion = sql.connect("Fondo.db")
-        cursor = conexion.cursor()
-
         calendario: list[datetime.datetime] = list(
             map(
                 lambda x: datetime.datetime(*x),
                 map(
                     lambda y: map(int, y.split("/")),
-                    c_sql.obtener_ajuste("calendario", False).split("_"),
+                    msql.obtener_ajuste("calendario", False).split("_"),
                 ),
             )
         )
@@ -69,18 +66,18 @@ def rectificar_todo() -> None:
 
         semanas_a_revisar: int = sum(map(lambda x: int(x < fecha_actual), calendario))
 
-        cobrar_multas = bool(c_sql.obtener_ajuste("cobrar multas"))
-        # anular_usuarios = bool(c_sql.obtener_ajuste("anular usuarios"))
+        cobrar_multas = bool(msql.obtener_ajuste("cobrar multas"))
+        # anular_usuarios = bool(msql.obtener_ajuste("anular usuarios"))
 
         print("Rectificando multas")
-        for index in tqdm(range(c_sql.obtener_ajuste("usuarios"))):  # iteramos sobre todos los usuarios
+        for index in tqdm(range(msql.obtener_ajuste("usuarios"))):  # iteramos sobre todos los usuarios
             # rectificamos para cuotas
-            semanas_revisadas: int = c_sql.obtener_cuotas("revisiones", index)
+            semanas_revisadas: int = msql.obtener_cuotas("revisiones", index)
 
             if semanas_a_revisar > semanas_revisadas:
-                multas: str = c_sql.obtener_cuotas("multas", index)
+                multas: str = msql.obtener_cuotas("multas", index)
                 multas: list[list[int, ], ] = fc.descomprimir_to_list(multas)
-                pagas: int = c_sql.obtener_cuotas("pagas", index)
+                pagas: int = msql.obtener_cuotas("pagas", index)
                 deudas: int = 0
 
                 for i in range(50):
@@ -93,9 +90,12 @@ def rectificar_todo() -> None:
                         break
 
                 multas: str = fc.comprimir_to_str(multas)
-                c_sql.guardar_valor_t("cuotas", "multas", index, multas)
-                c_sql.guardar_valor("cuotas", "adeudas", index, deudas)
-                c_sql.guardar_valor("cuotas", "revisiones", index, semanas_a_revisar)
+                msql.guardar_valor_t("cuotas", "multas", index, multas)
+                msql.guardar_valor("cuotas", "adeudas", index, deudas)
+                msql.guardar_valor("cuotas", "revisiones", index, semanas_a_revisar)
+
+        conexion = sql.connect("Fondo.db")
+        cursor = conexion.cursor()
 
         # revisamos para todos los prestamos
         cursor.execute(

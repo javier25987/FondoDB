@@ -1,11 +1,11 @@
 import src.funciones.general as fg
 import streamlit as st
-import src.sql.conect as c_sql
+import src.msql as msql
 import sqlite3
 
 
 def abrir_usuario(index: int):
-    if 0 > index >= c_sql.obtener_ajuste("usuarios"):
+    if 0 > index >= msql.obtener_ajuste("usuarios"):
         return False, "El numero de usuario esta fuera de rango"
 
     return True, ""
@@ -44,7 +44,7 @@ def entregar_boletas(index: int, boletas: list, rifa: str):
     """
     Falta incluir las deudas por entregar una boleta
     """
-    st.header(f"№ {index} - {c_sql.obtener_ig('nombre', index).title()}")
+    st.header(f"№ {index} - {msql.obtener_ig('nombre', index).title()}")
     st.divider()
 
     st.write(
@@ -70,10 +70,10 @@ def entregar_boletas(index: int, boletas: list, rifa: str):
 
 @st.dialog("Pago de boletas")
 def pago_de_boletas(index: int, pago: int, rifa: str):
-    st.header(f"№ {index} - {c_sql.obtener_ig('nombre', index).title()}")
+    st.header(f"№ {index} - {msql.obtener_ig('nombre', index).title()}")
     st.divider()
 
-    deuda_act: int = c_sql.obtener_rifas(f"r{rifa}_deudas", index)
+    deuda_act: int = msql.obtener_rifas(f"r{rifa}_deudas", index)
 
     st.write(f"Deuda por boletas: {deuda_act:,}")
     st.write(f"Pago que se realiza: {pago:,}")
@@ -82,7 +82,7 @@ def pago_de_boletas(index: int, pago: int, rifa: str):
     st.divider()
 
     if st.button("Aceptar pago"):
-        c_sql.increment("rifas", f"r{rifa}_deudas", index, -pago)
+        msql.increment("rifas", f"r{rifa}_deudas", index, -pago)
 
         # ACA SE TIENE QUE PONER LA FUNCION PARA LA ANOTACION
 
@@ -122,7 +122,7 @@ def rectificar_pago(monto: int, monto_d: int) -> tuple[bool, str]:
 
 @st.dialog("Pago de boletas:")
 def formlario_de_pago(usr: int, monto: int, monto_d: int):
-    st.header(f"№ {usr} - {c_sql.obtener_ig('nombre', usr).title()}")
+    st.header(f"№ {usr} - {msql.obtener_ig('nombre', usr).title()}")
     st.divider()
 
     st.table(
@@ -139,5 +139,5 @@ def formlario_de_pago(usr: int, monto: int, monto_d: int):
             f"El usuario {usr} ha pagado {monto}, en boletas. {monto_d:,} -> {
                 monto_d - monto:,}",
         )
-        c_sql.increment("deudas_rifa", "deuda", usr, -monto)
+        msql.increment("deudas_rifa", "deuda", usr, -monto)
         st.rerun()

@@ -1,4 +1,4 @@
-import src.sql.conect as c_sql
+import src.msql as msql
 import sqlite3 as sql
 import pandas as pd
 
@@ -20,7 +20,7 @@ def mostrar_transferencias_todo():
 
     datos = list(zip(*datos))
 
-    nombres = [c_sql.obtener_ig("nombre", i) for i in datos[0]]
+    nombres = [msql.obtener_ig("nombre", i) for i in datos[0]]
 
     datos[2] = map(lambda x: f"{x:,}", datos[2])
 
@@ -71,7 +71,7 @@ def mostrar_transferencias(index: int):
 
     datos = list(zip(*datos))
 
-    nombres = [c_sql.obtener_ig("nombre", i) for i in datos[0]]
+    nombres = [msql.obtener_ig("nombre", i) for i in datos[0]]
 
     datos[2] = map(lambda x: f"{x:,}", datos[2])
 

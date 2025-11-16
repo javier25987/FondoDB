@@ -1,6 +1,6 @@
 import src.funciones.anotaciones as fa
 import src.funciones.general as fg
-import src.sql.conect as c_sql
+import src.msql as msql
 import streamlit as st
 import sqlite3 as sql
 import pandas as pd
@@ -9,7 +9,7 @@ import time
 
 
 def abrir_usuario(index: int) -> (bool, str):  # type: ignore
-    if 0 > index >= c_sql.obtener_ajuste("usuarios"):
+    if 0 > index >= msql.obtener_ajuste("usuarios"):
         return False, "El numero de usuario esta fuera de rango"
 
     arreglar_asuntos(index)
@@ -72,13 +72,13 @@ def crear_tablas_de_prestamos(index: int):
 
 
 def consultar_capital_disponible(index: int) -> tuple:
-    capital: int = c_sql.obtener_ig("capital", index)
+    capital: int = msql.obtener_ig("capital", index)
     capital_disponible: int = int(
-        capital * c_sql.obtener_ajuste("capital usable") / 100
+        capital * msql.obtener_ajuste("capital usable") / 100
     )
 
-    deudas_por_fiador: int = c_sql.obtener_prestamos("deudas_por_fiador", index)
-    fiador_de: str = c_sql.obtener_prestamos("fiador_de", index)
+    deudas_por_fiador: int = msql.obtener_prestamos("deudas_por_fiador", index)
+    fiador_de: str = msql.obtener_prestamos("fiador_de", index)
 
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
@@ -253,7 +253,7 @@ def rectificar_viavilidad(
         capital_de_fiador: int = consultar_capital_usuario(i)
         if capital_de_fiador < deudas_con_fiadores[count]:
             return False, f"El fiador con puesto №{i} no cuenta con el dinero"
-        if not bool(c_sql.obtener_ig("estado", i)):
+        if not bool(msql.obtener_ig("estado", i)):
             return False, f"El fiador con puesto №{i} no esta activo"
         count += 1
 
@@ -261,7 +261,7 @@ def rectificar_viavilidad(
 
 
 def calendario_de_meses(fecha_actual: "datetime" = "") -> str:
-    fecha_de_cierre = c_sql.obtener_ajuste("fecha de cierre", False)
+    fecha_de_cierre = msql.obtener_ajuste("fecha de cierre", False)
     fecha_de_cierre: datetime = datetime.datetime(*map(int, fecha_de_cierre.split("-")))
 
     if fecha_actual == "":
@@ -304,25 +304,25 @@ def escribir_prestamo(
 
     apunte: str = f"el usuario:{index} solicito un prestamo por {valor:,} mas detalles en la pagina del usuario"
 
-    interes: int = c_sql.obtener_ajuste("interes m tope")
+    interes: int = msql.obtener_ajuste("interes m tope")
 
-    if valor > c_sql.obtener_ajuste("tope intereses"):
-        interes = c_sql.obtener_ajuste("interes M tope")
+    if valor > msql.obtener_ajuste("tope intereses"):
+        interes = msql.obtener_ajuste("interes M tope")
 
     valor_incrementar: int = int(valor * (interes / 100))
 
-    c_sql.increment("prestamos", "dinero_por_intereses", index, valor_incrementar)
+    msql.increment("prestamos", "dinero_por_intereses", index, valor_incrementar)
 
     for i, j in zip(fiadores, deudas_fiadores):
         if i != 1976:
-            c_sql.increment("prestamos", "deudas_por_fiador", i, j)
-            c_sql.increment_str("prestamos", "fiador_de", i, str(index))
+            msql.increment("prestamos", "deudas_por_fiador", i, j)
+            msql.increment_str("prestamos", "fiador_de", i, str(index))
 
-    c_sql.increment("prestamos", "prestamos_hechos", index, 1)
-    c_sql.increment("prestamos", "dinero_en_prestamos", index, valor)
+    msql.increment("prestamos", "prestamos_hechos", index, 1)
+    msql.increment("prestamos", "dinero_en_prestamos", index, valor)
 
     dinero_por_si = valor - sum(deudas_fiadores)
-    c_sql.increment("prestamos", "dinero_por_si_mismo", index, dinero_por_si)
+    msql.increment("prestamos", "dinero_por_si_mismo", index, dinero_por_si)
 
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
@@ -361,7 +361,7 @@ def formulario_de_prestamo(
     index: int, valor: int, fiadores: list[int] = list,
     deudas_fiadores: list[int] = list,
 ) -> None:
-    st.header(f"№ {index}: {c_sql.obtener_ig('nombre', index).title()}")
+    st.header(f"№ {index}: {msql.obtener_ig('nombre', index).title()}")
     st.divider()
 
     st.subheader(f"Valor de el prestamo: {valor:,}")
@@ -501,7 +501,7 @@ def pagar_un_prestamo(index: int, monto: int, codigo: int) -> None:
     conexion.close()
 
     for i, j in zip(index_1, index_2):
-        c_sql.increment("prestamos", "deudas_por_fiador", i, j)
+        msql.increment("prestamos", "deudas_por_fiador", i, j)
 
 
 def obtener_deuda_total(codigo: int) -> int:

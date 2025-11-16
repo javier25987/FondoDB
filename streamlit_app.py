@@ -35,16 +35,12 @@ if "numero_buscar_boleta" not in st.session_state: # este valo dice si hay que m
 if "tabla_modificar" not in st.session_state:
     st.session_state.tabla_modificar = {}
 
-if "fecha_a_mostrar" not in st.session_state:
-    st.session_state.fecha_a_mostrar = "NoData"
-
 # paginas de usuario general
 paginas_generales: list = [
     st.Page("src/paginas/Menu.py", title="Menu", icon="🏠"),
     st.Page("src/paginas/Cuotas.py", title="Cuotas", icon="📆"),
     st.Page("src/paginas/Prestamos.py", title="Prestamos", icon="💵"),
     st.Page("src/paginas/AnalisUsuarios.py", title="Analizar Ususarios", icon="📈"),
-    st.Page("src/paginas/Apuntes.py", title="Apuntes", icon="🏷"),
     st.Page("src/paginas/Transferencias.py", title="Transferencias", icon="🏛️"),
     st.Page("src/paginas/Rifas.py", title="Rifas", icon="🗒️"),
     st.Page("src/paginas/Anotaciones.py", title="Anotaciones", icon="📘"),

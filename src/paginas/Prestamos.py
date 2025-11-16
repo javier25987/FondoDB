@@ -1,6 +1,6 @@
 import src.funciones.prestamos as fp
 import src.funciones.general as fg
-import src.sql.conect as c_sql
+import src.msql as msql
 import streamlit as st
 import webbrowser
 
@@ -21,7 +21,7 @@ if index == -1:
     st.title("Usuario indeterminado")
     st.stop()
 
-st.title(f"№ {index} - {c_sql.obtener_ig('nombre', index).title()}")
+st.title(f"№ {index} - {msql.obtener_ig('nombre', index).title()}")
 
 tab = st.tabs(["Prestamos", "Solicitar Prestamo", "Consultar Capital"])
 

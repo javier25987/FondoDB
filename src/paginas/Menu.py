@@ -1,5 +1,5 @@
 import src.funciones.menu as fm
-import src.sql.conect as c_sql
+import src.msql as msql
 import streamlit as st
 
 st.title("Menu de inicio")
@@ -23,7 +23,7 @@ with col1:
     if st.button("📤 Guardar En GitHub"):
         fm.hacer_commit()
 
-    st.link_button("🔗 Abrir GitHub", c_sql.obtener_ajuste("enlace repo", False))
+    st.link_button("🔗 Abrir GitHub", msql.obtener_ajuste("enlace repo", False))
 
 with col2:
     st.header("Cargar multas")

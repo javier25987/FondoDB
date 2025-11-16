@@ -1,4 +1,4 @@
-import src.sql.conect as c_sql
+import src.msql as msql
 import streamlit as st
 import sqlite3 as sql
 import subprocess
@@ -72,4 +72,4 @@ def advertencia():
 
 
 def rect_estado(idx: int) -> bool:
-    return bool(c_sql.obtener_ig("estado", idx))
+    return bool(msql.obtener_valor("informacion_general", "estado", idx))

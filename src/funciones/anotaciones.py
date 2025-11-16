@@ -1,31 +1,37 @@
-import src.sql.conect as c_sql
 import src.funciones.general as fg
+import src.msql as msql
+import sqlite3 as sql
 import datetime
 
 
 def abrir_usuario(index: int) -> (bool, str):  # type: ignore
-    if 0 > index >= c_sql.obtener_ajuste("usuarios"):
+    if 0 > index >= msql.obtener_ajuste("usuarios"):
         return False, "El numero de usuario esta fuera de rango"
 
     return True, ""
 
 
-def certificar_anotacion(anotacion: str, motivo: str, monto: int, idx) -> (bool, str):  # type: ignore
-    if not fg.rect_estado(idx):
+def obtener_datos(index) -> dict[str, int | str]:
+    return {
+        "nombre": msql.obtener_valor("informacion_general", "nombre", index).title(),
+        "multas": msql.obtener_valor("multas", "extras", index)
+    }
+
+
+def certificar_anotacion(anotacion: str, motivo: str, monto: int, index) -> tuple[bool, str]:
+    if not fg.rect_estado(index):
         return False, "El usuario no esta activo"
 
     if anotacion == "":
         return False, "La anotacion esta vacia"
 
-    if motivo in {"MULTA", "ACUERDO"} and monto <= 0:
+    if motivo == "MONETARIA" and monto == 0:
         return (
             False,
-            "No se puede hacer una anotacion con tal motivo y monto menor a cero",
+            "No se puede hacer una anotacion MONETARIA con monto igual a cero",
         )
 
-    simbolos: list[str, ...] = ["_", "$", "."]  # type: ignore
-
-    for i in simbolos:
+    for i in ["$", "."]:
         if i in anotacion:
             return False, f"El simbolo '{i}' no puede estar en la anotacion"
 
@@ -33,29 +39,59 @@ def certificar_anotacion(anotacion: str, motivo: str, monto: int, idx) -> (bool,
 
 
 def realizar_anotacion(index: int, anotacion: str, monto: int, motivo: str) -> None:
-    # sumatoria a "aporte a multas"
-    if motivo in {"MULTA", "ACUERDO"}:
-        c_sql.increment("informacion_general", "aporte_a_multas", index, monto)
+    # sumatoria a "multas, extras"
+    if motivo == "MONETARIA":
+        msql.increment_int("multas", "extras", index, monto)
 
-    # creacion de la anotacion
-    anotacion: str = (
-        f"[{datetime.datetime.now().strftime('%Y/%m/%d %H:%M')}] " + anotacion
-    )
+    fecha: str = datetime.datetime.now().strftime('%Y/%m/%d %H:%M')
 
-    if motivo != "GENERAL":
+    if motivo == "MONETARIA":
         anotacion += f". $ {monto}"
 
-    # escritura de la anotacion
+    motivo_cargar: str = motivo[0].upper()
 
-    columna_anotacion = motivo.lower()
-    c_sql.increment_str("anotaciones", columna_anotacion, index, anotacion)
-
-    # escritura del valor
-    if motivo != "GENERAL":
-        c_sql.increment("informacion_general", "multas_extra", index, monto)
+    #cargamos anotacion
+    cargar_anotacion(index, anotacion, motivo_cargar, fecha)
 
 
-def obtener_anotaciones(index: int, motivo: str) -> list[str, ...]:  # type: ignore
-    anotaciones = c_sql.obtener_valor("anotaciones", motivo, index)
+def cargar_anotacion(idx: int, anotacion: str, motivo: str, fecha: str) -> None:
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
 
-    return anotaciones.split("_") if anotaciones != "n" else []
+    cursor.execute(
+        """
+        INSERT INTO anotaciones (idx, anotacion, tipo, fecha)
+        VALUES (?,?,?,?)
+        """,
+        (idx, anotacion, motivo, fecha),
+    )
+
+    conexion.commit()
+    conexion.close()
+
+
+def obtener_anotaciones(index: int, tipo: str) -> list[str]:
+    tipo_busqueda: str = tipo[0].upper()
+
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    cursor.execute(
+        """
+        SELECT anotacion, fecha
+        FROM anotaciones
+        WHERE tipo = ? and idx = ?
+        """,
+        (tipo_busqueda, index)
+    )
+
+    datos: list[tuple[str]] = cursor.fetchall()
+
+    conexion.commit()
+    conexion.close()
+
+    anotaciones: list[str] = [
+        f"[{anot[1]}] {anot[0]}" for anot in datos
+    ]
+
+    return anotaciones

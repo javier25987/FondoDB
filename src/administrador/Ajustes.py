@@ -1,5 +1,5 @@
 import src.funciones.ajustes as fa
-import src.sql.conect as c_sql
+import src.msql as msql
 import streamlit as st
 import pandas as pd
 import os
@@ -23,13 +23,13 @@ key: int = 1
 with tab[0]:
     st.header("Calendario:")
 
-    calendario: str = c_sql.obtener_ajuste("calendario", False)
+    calendario_s: str = msql.obtener_ajuste("calendario", False)
 
-    if calendario == "n":
+    if calendario_s == "n":
         st.error("No hay un calendario", icon="🚨")
         st.subheader("Crear calendario:")
     else:
-        calendario: list[str] = calendario.split("_")
+        calendario: list[str] = calendario_s.split("_")
         hora_de_corte: str = calendario[1][-2:]
         calendario = list(map(lambda x: x[:-3], calendario))
         # calendario += ['____/__/__']
@@ -51,10 +51,10 @@ with tab[0]:
     col0 = st.columns(4)
 
     with col0[0]:
-        n_hora: int = st.number_input("Hora de cierre: ", value=19, step=1)
+        n_hora: int = st.number_input("Hora de cierre: ", value=19, step=1) # type:ignore
 
     with col0[1]:
-        n_fecha_inicial = st.date_input("Fecha inicial: ")
+        n_fecha_inicial = st.date_input("Fecha inicial: ") # type: ignore
     with col0[2]:
         cantidad_dobles: int = st.number_input("Fechas dobles:", value=1, step=1)
     with col0[3]:
@@ -64,7 +64,7 @@ with tab[0]:
     if st.button("Crear calendario", key=f"key: {key}"):
         n_hora: str = str(n_hora)
 
-        n_fecha_inicial: str = n_fecha_inicial.strftime("%Y/%m/%d") + "/" + n_hora
+        n_fecha_inicial: str = n_fecha_inicial.strftime("%Y/%m/%d") + "/" + n_hora # type: ignore
 
         fechas_dobles: list[str] = [
             st.session_state[f"fecha_{x}"].strftime("%Y/%m/%d") + "/" + n_hora
@@ -74,7 +74,7 @@ with tab[0]:
         if len(set(fechas_dobles)) != len(fechas_dobles):
             st.error("Hay fechas dobles repetidas", icon="🚨")
         else:
-            c_sql.guardar_ajuste_t(
+            msql.guardar_ajuste_t(
                 "calendario",
                 fa.crear_listado_de_fechas(
                     n_fecha_inicial, fechas_dobles
@@ -92,7 +92,7 @@ with tab[0]:
 
     with col0_1[1]:
         if st.button("Eliminar calendario", key=f"key: {key}"):
-            c_sql.guardar_ajuste_t("calendario", "n")
+            msql.guardar_ajuste_t("calendario", "n")
             fa.avisar()
         key += 1
 
@@ -109,7 +109,7 @@ with tab[1]:
         st.subheader("Por puesto:")
 
         st.write(
-            f"Valor de la cuota por puesto: {c_sql.obtener_ajuste("valor cuota"):,}"
+            f"Valor de la cuota por puesto: {msql.obtener_ajuste("valor cuota"):,}"
         )
 
         n_cuota_puesto = st.number_input(
@@ -117,19 +117,19 @@ with tab[1]:
         )
 
         if st.button("Modificar", key=f"key: {key}"):
-            c_sql.guardar_ajuste("valor cuota", n_cuota_puesto)
+            msql.guardar_ajuste_n("valor cuota", n_cuota_puesto)
             fa.avisar()
         key += 1
 
     with col1[1]:
         st.subheader("Por multa:")
         st.write(
-            f"Valor de la multa por puesto: {c_sql.obtener_ajuste("valor multa"):,}"
+            f"Valor de la multa por puesto: {msql.obtener_ajuste("valor multa"):,}"
         )
         n_cuota_multa = st.number_input("Nuevo valor de la multa:", value=3000, step=1)
 
         if st.button("Modificar", key=f"key: {key}"):
-            c_sql.guardar_ajuste("valor multa", n_cuota_multa)
+            msql.guardar_ajuste_n("valor multa", n_cuota_multa)
             fa.avisar()
         key += 1
 
@@ -139,13 +139,13 @@ with tab[2]:
     with col2[0]:
         st.subheader("Contraseña actual: ")
 
-        st.caption(f"# {c_sql.obtener_ajuste("clave acceso", False)}")
+        st.caption(f"# {msql.obtener_ajuste("clave acceso", False)}")
 
     with col2[1]:
         nueva_clave = st.text_input("Nueva contraseña:")
 
         if st.button("Modificar", key=f"key: {key}"):
-            c_sql.guardar_ajuste_t("clave acceso", nueva_clave)
+            msql.guardar_ajuste_t("clave acceso", nueva_clave)
             fa.avisar()
         key += 1
 
@@ -161,12 +161,12 @@ with tab[3]:
     col3_1 = st.columns(2)
 
     with col3_1[0]:
-        st.markdown(f"##### Tope actual: {c_sql.obtener_ajuste("tope intereses"):,}")
+        st.markdown(f"##### Tope actual: {msql.obtener_ajuste("tope intereses"):,}")
 
     with col3_1[1]:
         nuevo_tope: int = st.number_input("Nuevo tope:", value=20000000, step=1)
         if st.button("Modificar", key=f"key: {key}"):
-            c_sql.guardar_ajuste("tope intereses", nuevo_tope)
+            msql.guardar_ajuste_n("tope intereses", nuevo_tope)
             fa.avisar()
         key += 1
     st.divider()
@@ -185,7 +185,7 @@ with tab[3]:
         st.markdown("### Menos de el tope:")
         st.markdown(
             f"##### el interes actual por prestamo es: {
-                c_sql.obtener_ajuste("interes m tope")
+                msql.obtener_ajuste("interes m tope")
             } %"
         )
     with col3_2[1]:
@@ -193,7 +193,7 @@ with tab[3]:
             "Nuevo interes menor a el tope:", value=3, step=1
         )
         if st.button("Modificar", key=f"key: {key}"):
-            c_sql.guardar_ajuste("interes m tope", nuevo_interes_m_tope)
+            msql.guardar_ajuste_n("interes m tope", nuevo_interes_m_tope)
             fa.avisar()
         key += 1
         st.divider()
@@ -204,7 +204,7 @@ with tab[3]:
         st.markdown("### Mas de el tope:")
         st.markdown(
             f"##### el interes actual por prestamo es: {
-                c_sql.obtener_ajuste("interes M tope")
+                msql.obtener_ajuste("interes M tope")
             } %"
         )
     with col3_3[1]:
@@ -212,7 +212,7 @@ with tab[3]:
             "Nuevo interes mayor a el tope:", value=2, step=1
         )
         if st.button("Modificar", key=f"key: {key}"):
-            c_sql.guardar_ajuste("interes M tope", nuevo_interes_M_tope)
+            msql.guardar_ajuste_n("interes M tope", nuevo_interes_M_tope)
             fa.avisar()
         key += 1
 
@@ -224,9 +224,9 @@ with tab[3]:
 
     with col3_4[0]:
         st.markdown(
-            f"##### Actual mente se puede usar un `{
-                c_sql.obtener_ajuste("capital usable")
-            }%` del capital guardado."
+            f"""##### Actual mente se puede usar un `{
+                msql.obtener_ajuste("capital usable")
+            }%` del capital guardado."""
         )
 
         st.markdown(
@@ -242,7 +242,7 @@ with tab[3]:
         )
 
         if st.button("Modificar", key=f"key: {key}"):
-            c_sql.guardar_ajuste("capital usable", nuevo_capital_usable)
+            msql.guardar_ajuste_n("capital usable", nuevo_capital_usable)
             fa.avisar()
         key += 1
 
@@ -255,14 +255,14 @@ with tab[4]:
         st.markdown("### Numero de usuarios:")
 
         st.write(f"actualmete en el programa hay [ {
-            c_sql.obtener_ajuste("usuarios")
+            msql.obtener_ajuste("usuarios")
         } ] usuarios")
     with col4_1[1]:
         nuevo_usuarios: int = st.number_input(
             "Nuevo numero de usuarios:", value=0, step=1
         )
         if st.button("Modificar", key=f"key: {key}"):
-            c_sql.guardar_ajuste("usuarios", nuevo_usuarios)
+            msql.guardar_ajuste_n("usuarios", nuevo_usuarios)
             fa.avisar()
         key += 1
     st.divider()
@@ -271,14 +271,14 @@ with tab[4]:
 
     with col4_2[0]:
         st.subheader("Desactivar usuarios:")
-        desactivar_usuarios: bool = bool(c_sql.obtener_ajuste("anular usuarios"))
+        desactivar_usuarios: bool = bool(msql.obtener_ajuste("anular usuarios"))
         if desactivar_usuarios:
             st.write("Los usuarios seran desactivados")
         else:
             st.write("Los usuarios NO seran desactivados")
 
         if st.button("Invertir", key=f"key: {key}"):
-            c_sql.guardar_ajuste(
+            msql.guardar_ajuste_n(
                 "anular usuarios", int(not desactivar_usuarios)
             )
             fa.avisar()
@@ -286,14 +286,14 @@ with tab[4]:
 
     with col4_2[1]:
         st.subheader("Cobrar multas:")
-        cobrar_multas: bool = bool(c_sql.obtener_ajuste("cobrar multas"))
+        cobrar_multas: bool = bool(msql.obtener_ajuste("cobrar multas"))
         if cobrar_multas:
             st.write("Actualmente se generan multas")
         else:
             st.write("Actualmete NO se generan multas")
 
         if st.button("Invertir", key=f"key: {key}"):
-            c_sql.guardar_ajuste(
+            msql.guardar_ajuste_n(
                 "cobrar multas", int(not cobrar_multas)
             )
             fa.avisar()
@@ -306,14 +306,14 @@ with tab[5]:
         st.subheader("Fecha de cierre: ")
 
         st.write(f"fecha de cierre actual: {
-            c_sql.obtener_ajuste("fecha de cierre", False)
+            msql.obtener_ajuste("fecha de cierre", False)
         }")
 
     with col5[1]:
-        n_fecha: datetime = st.date_input("Nueva fecha de cierre:")
+        n_fecha = st.date_input("Nueva fecha de cierre:")
 
         if st.button("Modificar", key=f"key: {key}"):
-            c_sql.guardar_ajuste_t(
+            msql.guardar_ajuste_t(
                 "fecha de cierre", n_fecha.strftime("%Y/%m/%d")
             )
             fa.avisar()
@@ -333,13 +333,13 @@ with tab[6]:
     with col7_1[0]:
         st.subheader("Ruta de el programa: ")
         st.write(f"Ruta de el programa: {
-            c_sql.obtener_ajuste("path programa", False)
+            msql.obtener_ajuste("path programa", False)
         }")
 
     with col7_1[1]:
         if st.button("Configurar path", key=f"key: {key}"):
             print("path: ", os.getcwd())
-            c_sql.guardar_ajuste_t("path programa", os.getcwd())
+            msql.guardar_ajuste_t("path programa", os.getcwd())
             fa.avisar()
         key += 1
     st.divider()
@@ -348,13 +348,13 @@ with tab[6]:
 
     with col7_2[0]:
         st.subheader("Enlace de el repositorio")
-        st.write(f"Enlace actual: {c_sql.obtener_ajuste("enlace repo", False)}")
+        st.write(f"Enlace actual: {msql.obtener_ajuste("enlace repo", False)}")
 
     with col7_2[1]:
         n_enlace: str = st.text_input("Nuevo enlace:")
 
         if st.button("Modificar", key=f"key: {key}"):
-            c_sql.guardar_ajuste_t("enlace repo", n_enlace)
+            msql.guardar_ajuste_t("enlace repo", n_enlace)
             fa.avisar()
         key += 1
     st.divider()
@@ -363,13 +363,13 @@ with tab[6]:
 
     with col7_3[0]:
         st.subheader("Commits hechos")
-        st.write(f"Commits realizados: {c_sql.obtener_ajuste("commits hechos")}")
+        st.write(f"Commits realizados: {msql.obtener_ajuste("commits hechos")}")
 
     with col7_3[1]:
         n_comits: int = st.number_input("Nuevos commits:", value=0, step=1)
 
         if st.button("Modificar", key=f"key: {key}"):
-            c_sql.guardar_ajuste("commits hechos", n_comits)
+            msql.guardar_ajuste_n("commits hechos", n_comits)
             fa.avisar()
         key += 1
 

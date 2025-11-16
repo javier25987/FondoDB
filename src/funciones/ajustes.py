@@ -12,7 +12,7 @@ def crear_listado_de_fechas(primera_fecha: str, dobles: list[str]) -> str:
     para este formato es obligatorio que las fechas esten en el formato
     anio/mes/dia/hora (la hora tiene que estar en formato 24 horas)
     """
-    fecha = fg.string_a_fecha(primera_fecha)
+    fecha = fg.string_a_fecha(primera_fecha) # type: ignore
     fechas = []
 
     i: int = 0
@@ -24,7 +24,7 @@ def crear_listado_de_fechas(primera_fecha: str, dobles: list[str]) -> str:
         fechas.append(f_new)
         i += 1
 
-    for i in dobles:
+    for i in dobles: # type: ignore
         if i not in fechas:
             return "n"
 
@@ -78,7 +78,7 @@ def cargar_datos_de_rifa(
     ganancias_por_boleta /= numero_de_boletas
     ganancias_por_boleta = int(ganancias_por_boleta)
 
-    premios = "_".join([str(i) for i in premios])
+    premios = "_".join([str(i) for i in premios]) # type: ignore
 
     _id: int = 1
 
