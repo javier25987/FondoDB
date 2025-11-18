@@ -1,6 +1,6 @@
-import streamlit as st
 import src.funciones.ingresar_boletas as fi
 import src.funciones.rifas as fr
+import streamlit as st
 
 tabla_de_boletas: str = "boletas_rifa_2"
 ultimo_numero = [] # esto en teoria tiene que ser un stack pero me da pereza implementarlo

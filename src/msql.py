@@ -51,7 +51,7 @@ def guardar_ajuste_t(nombre: str, nuevo_valor: int | str) -> None:
     conexion.close()
 
 
-def obtener_valor(tabla: str, columna: str, index: int): # -> str | int:
+def obtener_valor(tabla: str, columna: str, index: int) -> str | int:
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 

@@ -1,11 +1,11 @@
 import src.funciones.general as fg
-import streamlit as st
 import src.msql as msql
+import streamlit as st
 import sqlite3
 
 
 def abrir_usuario(index: int):
-    if 0 > index >= msql.obtener_ajuste("usuarios"):
+    if index < 0 or index > msql.obtener_ajuste("usuarios"):
         return False, "El numero de usuario esta fuera de rango"
 
     return True, ""

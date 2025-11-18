@@ -23,6 +23,8 @@ if index == -1:
     st.title("Usuario indeterminado")
     st.stop()
 
+fc.rectificar_cuotas(index)
+
 user = fc.obtener_datos_usuario(index)
 
 st.title(

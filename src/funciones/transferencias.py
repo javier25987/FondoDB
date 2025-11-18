@@ -1,40 +1,27 @@
-import src.msql as msql
 import sqlite3 as sql
-import pandas as pd
+import polars as pl
 
 
 def mostrar_transferencias_todo():
     conexion = sql.connect("Fondo.db")
-    cursor = conexion.cursor()
+    querry: str = """
+    SELECT 
+        t.id,
+        ig.nombre,
+        t.fecha,
+        t.monto
+    FROM transferencias t 
+    JOIN informacion_general ig 
+    ON t.id = ig.id 
+    """
 
-    cursor.execute(
-        """
-        SELECT *
-        From transferencias
-        """
-    )
-
-    datos = cursor.fetchall()
-
+    datos = pl.read_database(querry, conexion)
     conexion.close()
 
-    datos = list(zip(*datos))
-
-    nombres = [msql.obtener_ig("nombre", i) for i in datos[0]]
-
-    datos[2] = map(lambda x: f"{x:,}", datos[2])
-
-    resultado = {
-        "Numero": datos[0],
-        "Nombre": nombres,
-        "Fecha y Hora": datos[1],
-        "Monto": datos[2],
-    }
-
-    return pd.DataFrame(resultado)
+    return datos
 
 
-def obtener_usuarios() -> tuple[int, ...]:
+def obtener_usuarios() -> list[int]:
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
@@ -55,31 +42,19 @@ def obtener_usuarios() -> tuple[int, ...]:
 
 def mostrar_transferencias(index: int):
     conexion = sql.connect("Fondo.db")
-    cursor = conexion.cursor()
+    querry: str = f"""
+    SELECT 
+        t.id,
+        ig.nombre,
+        t.fecha,
+        t.monto
+    FROM transferencias t 
+    JOIN informacion_general ig 
+    ON t.id = ig.id
+    WHERE t.id = {index}
+    """
 
-    cursor.execute(
-        f"""
-        SELECT *
-        From transferencias
-        WHERE id = {index}
-        """
-    )
-
-    datos = cursor.fetchall()
-
+    datos = pl.read_database(querry, conexion)
     conexion.close()
 
-    datos = list(zip(*datos))
-
-    nombres = [msql.obtener_ig("nombre", i) for i in datos[0]]
-
-    datos[2] = map(lambda x: f"{x:,}", datos[2])
-
-    resultado = {
-        "Numero": datos[0],
-        "Nombre": nombres,
-        "Fecha y Hora": datos[1],
-        "Monto": datos[2],
-    }
-
-    return pd.DataFrame(resultado)
+    return datos

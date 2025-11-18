@@ -1,5 +1,5 @@
 import sqlite3 as sql
-import pandas as pd
+import polars as pl
 
 def insert_boleta(numeros: list, nombre_tabla: str):
     primer_numero = int(numeros[0])
@@ -21,10 +21,10 @@ def insert_boleta(numeros: list, nombre_tabla: str):
 
 def consultar_boletas_rifa(nombre_tabla: str):
     with sql.connect("Fondo.db") as conexion:
-        df = pd.read_sql_query(f"SELECT * FROM {nombre_tabla}", conexion)
+        df = pl.read_database(f"SELECT * FROM {nombre_tabla}", conexion)
 
-    if df.empty:
-        return pd.DataFrame(), False
+    if df.is_empty():
+        return pl.DataFrame(), False
     
     df.columns = ["Numero", "Boleta", "Dada a"]
     return df, True

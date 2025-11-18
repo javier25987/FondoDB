@@ -1,7 +1,7 @@
 import src.funciones.cuotas as fc
 import datetime
 import src.msql as msql
-import pandas as pd
+import polars as pl
 import sqlite3 as sql
 
 
@@ -42,14 +42,14 @@ def obtener_estado_de_cuenta(
         f.close()
 
 
-def abrir_usuario(idx: int) -> tuple[bool, str]:
-    if 0 > idx >= msql.obtener_ajuste("usuarios"):
+def abrir_usuario(index: int) -> tuple[bool, str]:
+    if index < 0 or index > msql.obtener_ajuste("usuarios"):
         return False, "El numero de usuario esta fuera de rango"
 
     return True, ""
 
 
-def obtener_informacion_general(idx: int) -> pd.DataFrame:
+def obtener_informacion_general(idx: int) -> pl.DataFrame:
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
@@ -100,4 +100,4 @@ def obtener_informacion_general(idx: int) -> pd.DataFrame:
 
     conexion.close()
 
-    return pd.DataFrame({"_ Total ..": nombres, "Valor": datos})
+    return pl.DataFrame({"_ Total ..": nombres, "Valor": datos})

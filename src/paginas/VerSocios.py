@@ -20,8 +20,7 @@ with tabs[0]:
 
 with tabs[1]:
     st.info(
-        "Todos los usuarios en esta tabla para la "
-        "fecha actual tienen que firmar acuerdo",
+        "Todos los usuarios en esta tabla para la fecha actual tienen que firmar acuerdo",
         icon="ℹ️",
     )
     st.table(fv.tabla_acuerdo())

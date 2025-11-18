@@ -1,117 +1,119 @@
-# Estructura de la base de datos
+```sql
+CREATE TABLE ajustes (
+	ajuste TEXT,
+	valor_n INTEGER,
+	valor_t TEXT
+);
 
-## Tablas
+CREATE TABLE anotaciones (
+	idx INTEGER,
+	anotacion TEXT,
+	tipo TEXT,
+	fecha TEXT
+);
 
-### Tabla `informacion_general`
+CREATE TABLE boletas_rifa_1 (
+	idx INTEGER,
+	boleta TEXT,
+	dada_a INTEGER
+);
 
-| Columna         | Tipo de valor    |
-| --------------- | ---------------- |
-| id              | INTEGER          |
-| nombre          | TEXT NOT NULL    |
-| puestos         | INTEGER          |
-| telefono        | TEXT NOT NULL    |
-| estado          | BOOLEAN NOT NULL |
-| capital         | INTEGER          |
-| aporte_a_multas | INTEGER          |
-| multas_extra    | INTEGER          |
+CREATE TABLE boletas_rifa_2 (
+	idx INTEGER,
+	boleta TEXT,
+	dada_a INTEGER
+);
 
-### Tabla `cuotas`
+CREATE TABLE boletas_rifa_3 (
+	idx INTEGER,
+	boleta TEXT,
+	dada_a INTEGER
+);
 
-| Columna    | Tipo de valor |
-| ---------- | ------------- |
-| id         | INTEGER       |
-| pagas      | INTEGER       |
-| adeudas    | INTEGER       |
-| multas     | TEXT NOT NULL |
-| revisiones | INTEGER       |
+CREATE TABLE boletas_rifa_4 (
+	idx INTEGER,
+	boleta TEXT,
+	dada_a INTEGER
+);
 
-### Tabla `rifas`
+CREATE TABLE cuotas (
+	id INTEGER,
+	pagas INTEGER,
+	adeudas INTEGER,
+	multas TEXT,
+	multas_pagas TEXT,
+	revisiones INTEGER,
+	bloqueos TEXT
+);
 
-| Columna    | Tipo de valor |
-| ---------- | ------------- |
-| id         | INTEGER       |
-| r1_boletas | TEXT NOT NULL |
-| r1_deudas  | INTEGER       |
-| r2_boletas | TEXT NOT NULL |
-| r2_deudas  | INTEGER       |
-| r3_boletas | TEXT NOT NULL |
-| r3_deudas  | INTEGER       |
-| r4_boletas | TEXT NOT NULL |
-| r4_deudas  | INTEGER       |
+CREATE TABLE datos_de_rifas (
+	id INTEGER,
+	numero_de_boletas INTEGER,
+	premios TEXT,
+	costo_de_boletas INTEGER,
+	costos_de_administracion INTEGER,
+	ganancias_por_boleta INTEGER
+);
 
-### Tabla `prestamos`
+CREATE TABLE deudas_rifa (
+	id INTEGER,
+	deuda INTEGER
+);
 
-| Columna              | Tipo de valor |
-| -------------------- | ------------- |
-| id                   | INTEGER       |
-| prestamos_hechos     | INTEGER       |
-| dinero_en_prestamos  | INTEGER       |
-| dinero_por_si_mismo  | INTEGER       |
-| dinero_por_intereses | INTEGER       |
-| deudas_por_fiador    | INTEGER       |
-| fiador_de            | TEXT NOT NULL |
+CREATE TABLE informacion_general (
+	id INTEGER,
+	nombre TEXT,
+	puestos INTEGER,
+	telefono TEXT,
+	estado BOOLEAN
+);
 
-### Tabla `prestamos_hechos`
+CREATE TABLE prestamos (
+	id INTEGER,
+	deudas_por_fiador INTEGER,
+	fiador_de TEXT
+);
 
-| Columna             | Tipo de valor                     |
-| ------------------- | --------------------------------- |
-| codigo              | INTEGER PRIMARY KEY AUTOINCREMENT |
-| id                  | INTEGER                           |
-| estado              | BOOLEAN NOT NULL                  |
-| interes             | INTEGER                           |
-| intereses_vencidos  | INTEGER                           |
-| revisiones          | INTEGER                           |
-| deuda               | INTEGER                           |
-| fiadores            | TEXT NOT NULL                     |
-| deuda_con_fiadores  | TEXT NOT NULL                     |
-| fechas_de_pago      | TEXT NOT NULL                     |
-| cargar_intereses    | BOOLEAN NOT NULL                  |
+CREATE TABLE prestamos_hechos (
+	codigo INTEGER PRIMARY KEY AUTOINCREMENT,
+	idx INTEGER,
+	estado_de_pago BOOLEAN,
+	interes INTEGER,
+	interes_vencido INTEGER,
+	interes_generado INTEGER,
+	deuda INTEGER,
+	monto INTEGER,
+	fechas_de_pago TEXT,
+	revisiones INTEGER,
+	fiadores TEXT,
+	deuda_con_fiadores TEXT,
+	motivo TEXT
+);
 
-### Tabla `datos_de_rifas`
+CREATE TABLE registros (
+	fecha TEXT,
+	ingreso INTEGER,
+	egreso INTEGER
+);
 
-| Columna                  | Tipo de valor    |
-| ------------------------ | ---------------- |
-| id                       | INTEGER          |
-| estado                   | BOOLEAN NOT NULL |
-| numero_de_boletas        | INTEGER          |
-| numeros_por_boleta       | INTEGER          |
-| premios                  | TEXT NOT NULL    |
-| costo_de_boleta          | INTEGER          |
-| boletas_por_talonario    | INTEGER          |
-| costos_de_administracion | INTEGER          |
-| ganancia_por_boleta      | INTEGER          |
-| fecha_de_cierre          | TEXT NOT NULL    |
+CREATE TABLE transferencias (
+	idx INTEGER,
+	fecha TEXT,
+	monto INTEGER
+);
 
-### Tabla `ajustes`
+CREATE TABLE multas (
+	id INTEGER,
+	semanales INTEGER,
+	extras INTEGER
+);
 
-| Columna | Tipo de valor |
-| ------- | ------------- |
-| ajuste  | TEXT NOT NULL |
-| valor_n | INTEGER       |
-| valor_a | TEXT NOT NULL |
+CREATE TABLE capital (
+	id INTEGER,
+	pago INTEGER,
+	retirado INTEGER,
+	proyectado INTEGER
+);
 
-### Tabla `registros`
 
-| Columna | Tipo de valor |
-| ------- | ------------- |
-| fecha   | TEXT NOT NULL |
-| ingreso | INTEGER       |
-| egreso  | INTEGER       |
-
-### Tabla `anotaciones`
-
-| Columna   | Tipo de valor |
-| --------- | ------------- |
-| id        | INTEGER       |
-| general   | TEXT NOT NULL |
-| monetaria | TEXT NOT NULL |
-| multa     | TEXT NOT NULL |
-| acuerdo   | TEXT NOT NULL |
-
-### Tabla `transferencias`
-
-| Columna | Tipo de valor |
-| ------- | ------------- |
-| id      | INTEGER       |
-| fecha   | TEXT NOT NULL |
-| monto   | INTEGER       |
+```

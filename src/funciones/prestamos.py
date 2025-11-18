@@ -3,18 +3,78 @@ import src.funciones.general as fg
 import src.msql as msql
 import streamlit as st
 import sqlite3 as sql
-import pandas as pd
+import polars as pl
 import datetime
-import time
 
 
-def abrir_usuario(index: int) -> (bool, str):  # type: ignore
-    if 0 > index >= msql.obtener_ajuste("usuarios"):
+def abrir_usuario(index: int) -> tuple[bool, str]:
+    if index < 0 or index > msql.obtener_ajuste("usuarios"):
         return False, "El numero de usuario esta fuera de rango"
 
-    arreglar_asuntos(index)
-
     return True, ""
+
+
+def rectificar_prestamos(index: int) -> None:
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    cursor.execute(
+        """
+        SELECT
+            ph.codigo,
+            ph.fechas_de_pago,
+            ph.revisiones
+        FROM prestamos_hechos ph
+        WHERE ph.idx = ? AND ph.estado_de_pago = 1
+        """,
+        (index, )
+    )
+
+    datos = cursor.fetchall()
+
+    if len(datos) == 0:
+        conexion.close()
+        return
+
+    fecha_actual = datetime.datetime.now()
+
+    for codigo, fechas, revisiones in datos:
+        fechas_pasadas: int = sum(
+            map(
+                lambda x: x < fecha_actual,
+                map(
+                    lambda y: datetime.datetime(*map(int, y.split("/"))),
+                    fechas.split("_")
+                ),
+            )
+        )
+
+        if fechas_pasadas > revisiones:
+            print(f"prestamo {codigo}")
+            for _ in range(fechas_pasadas - revisiones):
+                cursor.execute(
+                    """
+                    UPDATE prestamos_hechos
+                    SET
+                        interes_vencido = interes_vencido + (
+                            deuda * interes
+                        ) / 100,
+                        revisiones = ?
+                    WHERE codigo = ?
+                    """,
+                    (fechas_pasadas, codigo)
+                )
+
+    conexion.commit()
+    conexion.close()
+
+# ======================================================================================================================
+# ENVIO DE DATOS
+
+def obtener_datos_usuario(index: int) -> dict:
+    return {
+        "nombre": msql.obtener_valor("informacion_general", "nombre", index).title(),
+    }
 
 
 def crear_tablas_de_prestamos(index: int):
@@ -22,553 +82,207 @@ def crear_tablas_de_prestamos(index: int):
     cursor = conexion.cursor()
 
     cursor.execute(
-        f"""
-        SELECT
-            ph.codigo, ph.interes, ph.intereses_vencidos, 
-            ph.interes_generado, ph.deuda, ph.fiadores,  
-            ph.deuda_con_fiadores, (ph.intereses_vencidos + ph.deuda),
-            ph.fechas_de_pago, ph.deuda_inicial
-        FROM prestamos_hechos ph
-        JOIN informacion_general ig
-        ON
-            ig.id = ph.id
-        WHERE
-            ph.id = {index} AND ph.estado = 1
         """
+        SELECT 
+            ph.codigo, ph.estado_de_pago, ph.interes,
+            ph.interes_vencido, ph.interes_generado,
+            ph.deuda, ph.monto, ph.fechas_de_pago,
+            ph.fiadores, ph.deuda_con_fiadores,
+            ph.motivo 
+        FROM prestamos_hechos ph
+        WHERE ph.idx = ?
+        """,
+        (index, )
     )
 
     prestamos = cursor.fetchall()
-
     conexion.close()
 
-    if len(prestamos) == 0:
-        return []
-
     return [
-        [
-            f"Codigo de prestamo: {i[0]}",
-            pd.DataFrame(
-                {
-                    "Interes": [f"{i[1]}%"],
-                    "Intereses vencidos": [f"{i[2]:,}"],
-                    "Interes generado": [f"{i[3]:,}"],
-                }
+        {
+            "codigo": prestamo[0],
+            "estado": "ACTIVO ⏳" if bool(prestamo[1]) else "PAGO ✅",
+            "tabla_interes": pl.DataFrame({
+                "Interes": [f"{prestamo[2]}%"],
+                "Intereses vencidos": [f"{prestamo[3]:,}"],
+                "Interes generado": [f"{prestamo[4]:,}"],
+            }),
+            "tabla_deuda": pl.DataFrame({
+                "Deuda": [f"{prestamo[5]:,}"],
+                "Monto": [f"{prestamo[6]:,}"],
+                "% Pago": [f"{int((1 - prestamo[5]/prestamo[6])*100)}%"],
+            }),
+            "fechas": pl.DataFrame({"Fechas de pago": prestamo[7].split("_")}),
+            "tabla_fiadores": pl.DataFrame(
+                {"Fiadores": prestamo[8].split("#"), "Deudas con fiadores": prestamo[9].split("#")}
             ),
-            pd.DataFrame(
-                {
-                    "Deuda": [f"{i[4]:,}"],
-                    "Valor del prestamo": [f"{i[9]:,}"],
-                    "% Pago": [f"{int((1 - i[4]/i[9])*100)}%"],
-                }
-            ),
-            f"Deuda TOTAL: {i[7]:,}",
-            pd.DataFrame(
-                {"Fiadores": i[5].split("#"), "Deudas con fiadores": i[6].split("#")}
-            ),
-            pd.DataFrame({"Fechas de pago": i[8].split("_")}),
-        ]
-        for i in prestamos # esto es solo un list conprention
+            "deuda": prestamo[3] + prestamo[5],
+            "motivo": prestamo[10]
+        }
+        for prestamo in prestamos # esto es solo un list conprention
     ]
 
 
-def consultar_capital_disponible(index: int) -> tuple:
-    capital: int = msql.obtener_ig("capital", index)
+def obtener_codigos(index: int) -> list[int]:
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    cursor.execute(
+        f"""
+        SELECT 
+            ph.codigo
+        FROM prestamos_hechos ph
+        WHERE 
+            ph.idx = {index} AND 
+            ph.deuda + ph.interes_vencido != 0
+        """
+    )
+
+    datos = cursor.fetchall()
+    conexion.close()
+
+    return [i[0] for i in datos]
+
+
+def capital_disponible_mostrar(index: int) -> dict[str, int|str|pl.DataFrame]:
+    capital: int = msql.obtener_valor("capital", "pago", index)
     capital_disponible: int = int(
         capital * msql.obtener_ajuste("capital usable") / 100
     )
 
-    deudas_por_fiador: int = msql.obtener_prestamos("deudas_por_fiador", index)
-    fiador_de: str = msql.obtener_prestamos("fiador_de", index)
+    deudas_por_fiador: int = msql.obtener_valor("prestamos", "deudas_por_fiador", index)
+    fiador_de: str = msql.obtener_valor("prestamos", "fiador_de", index)
 
     conexion = sql.connect("Fondo.db")
-    cursor = conexion.cursor()
+    query: str = f"""
+    SELECT 
+        ph.codigo AS Codigo,
+        ph.interes_vencido AS Interes,
+        ph.deuda AS Deuda
+    FROM prestamos_hechos ph
+    WHERE ph.idx = {index}
+    """
 
-    cursor.execute(
-        f"""
-        SELECT
-            ph.codigo, ph.deuda
-        FROM prestamos_hechos ph
-        WHERE
-            ph.id = {index} AND ph.estado = 1
-        """
-    )
-
-    datos = cursor.fetchall()
-
-    tablas_deudas = {}
-    if len(datos) != 0:
-        datos = list(zip(*datos))
-
-        datos[1] = [f"{i:,}" for i in datos[1]]
-
-        tablas_deudas = pd.DataFrame(
-            {"Codigo del prestamo": datos[0], "Deudas": datos[1]}
-        )
-
-    cursor.execute(
-        f"""
-        SELECT
-            ph.codigo, ph.intereses_vencidos
-        FROM prestamos_hechos ph
-        WHERE
-            ph.id = {index} AND
-            ph.estado = 1 AND
-            ph.intereses_vencidos > 0
-        """
-    )
-
-    datos = cursor.fetchall()
-
-    tablas_intereses = {}
-    if len(datos) != 0:
-        datos = list(zip(*datos))
-
-        datos[1] = [f"{i:,}" for i in datos[1]]
-
-        tablas_intereses = pd.DataFrame(
-            {"Codigo del prestamo": datos[0], "Deudas": datos[1]}
-        )
-
-    cursor.execute(
-        f"""
-        SELECT
-            SUM(ph.deuda),
-            SUM(ph.intereses_vencidos)
-        FROM prestamos_hechos ph
-        WHERE
-            ph.id = {index} AND ph.estado = 1
-        """
-    )
-
-    datos = cursor.fetchall()
+    df: pl.DataFrame = pl.read_database(query, conexion)
     conexion.close()
 
-    total_deudas = [0, 0]
-    if datos[0][0] is not None and datos[0][1] is not None:
-        total_deudas[0] = datos[0][0]
-        total_deudas[1] = datos[0][1]
+    total_interes: int = df["Interes"].sum()
+    total_deuda: int = df["Deuda"].sum()
 
-    total_disponible = capital_disponible - sum(total_deudas) - deudas_por_fiador
+    if total_interes is None:
+        total_interes = 0
 
-    return (
-        capital,
-        capital_disponible,
-        deudas_por_fiador,
-        fiador_de,
-        tablas_deudas,
-        tablas_intereses,
-        total_disponible,
-        total_deudas,
+    if total_deuda is None:
+        total_deuda = 0
+
+    total_disponible: int = capital_disponible - (
+        deudas_por_fiador + total_deuda + total_interes
     )
 
-
-def consultar_capital_usuario(index: int) -> int:
-    conexion = sql.connect("Fondo.db")
-    cursor = conexion.cursor()
-
-    cursor.execute(
-        f"""
-        SELECT
-            SUM(ph.intereses_vencidos + ph.deuda)
-        FROM prestamos_hechos ph
-        WHERE
-            ph.id = {index} AND
-            ph.estado = 1
-        """
-    )
-
-    deudas_en_prestamos: int = cursor.fetchall()[0][0]
-    deudas_en_prestamos = deudas_en_prestamos if deudas_en_prestamos is not None else 0
-
-    cursor.execute(
-        f"""
-        SELECT
-            (
-                ig.capital * (
-                    SELECT a.valor_n
-                    FROM ajustes a
-                    WHERE a.ajuste = 'capital usable'
-                )
-            ) / 100 - p.deudas_por_fiador
-        FROM informacion_general ig
-        JOIN prestamos p
-        ON
-            ig.id = p.id
-        WHERE ig.id = {index}
-        """
-    )
-
-    dato = int(cursor.fetchall()[0][0]) - deudas_en_prestamos
-
-    conexion.close()
-
-    return dato if dato is not None else 0
-
-
-def rectificar_viavilidad(
-    index: int,
-    valor: int,
-    fiadores: list[int] = list,
-    deudas_con_fiadores: list[int] = list,
-) -> (bool, str):  # type: ignore
-    # truco para saltarse toda la asuntos del prestamo
-    if 1976 in fiadores:
-        nota_a_incluir: str = "se ha saltado la revision de un prestamo"
-        fa.realizar_anotacion(index, nota_a_incluir, 0, "GENERAL")
-        st.toast(
-            "⚠️ ADVERTENCIA: se ha saltado la revision de viavilidad del "
-            "prestamo LO QUE PASE YA ES SU CULPA"
-        )
-        return True, ""
-
-    if index in fiadores:
-        return False, "Un usuario no puede ser su propio fiador"
-    if len(fiadores) != len(set(fiadores)):
-        return False, "No se permiten fiadores repetidos"
-
-    sum_deudas: int = sum(deudas_con_fiadores)
-    if valor == 0:
-        return False, "Hay razon para hacer un prestamo?"
-    if sum_deudas > valor:
-        return False, "La deuda con fiadores supera el valor de el prestamo"
-
-    capital_disponible: int = consultar_capital_usuario(index)
-
-    # rectificar para capital negativo o positivo
-    if capital_disponible > 0:
-        if valor - sum_deudas > capital_disponible:
-            return False, "El dinero de el usuario no alcanza para el prestamo"
-        if sum_deudas + capital_disponible < valor:
-            return False, "No alcanza para solitar el prestamo, solicite mas fiadores"
-    else:
-        if sum_deudas < valor:
-            return (
-                False,
-                "No alcanza para solitar el prestamo, rectifique que el"
-                "dinero de los fiadores alcance para el prestamo",
-            )
-
-    count: int = 0
-    for i in fiadores:
-        capital_de_fiador: int = consultar_capital_usuario(i)
-        if capital_de_fiador < deudas_con_fiadores[count]:
-            return False, f"El fiador con puesto №{i} no cuenta con el dinero"
-        if not bool(msql.obtener_ig("estado", i)):
-            return False, f"El fiador con puesto №{i} no esta activo"
-        count += 1
-
-    return True, ""
-
-
-def calendario_de_meses(fecha_actual: "datetime" = "") -> str:
-    fecha_de_cierre = msql.obtener_ajuste("fecha de cierre", False)
-    fecha_de_cierre: datetime = datetime.datetime(*map(int, fecha_de_cierre.split("-")))
-
-    if fecha_actual == "":
-        ahora: "datetime" = datetime.datetime.now()
-    else:
-        ahora = fecha_actual
-
-    fechas: list = []
-
-    dias_memoria: int = ahora.day
-    while True:
-        dias_uso: int = dias_memoria
-        while True:
-            try:
-                temporal_ahora: datetime = datetime.datetime(
-                    ahora.year + (ahora.month + 1 > 12), ahora.month % 12 + 1, dias_uso
-                )
-                ahora = temporal_ahora
-                break
-            except ValueError:
-                dias_uso -= 1
-
-        if ahora < fecha_de_cierre:
-            fechas.append(ahora.strftime("%Y/%m/%d"))
-        else:
-            break
-
-    return "_".join(fechas)
-
-
-def escribir_prestamo(
-    index: int, valor: int, fiadores: list[int] = list, 
-    deudas_fiadores: list[int] = list
-) -> None:
-    anotacion_final: str = (
-        f"Se ha concedido un prestamo por {valor:,} (de) pesos, "
-        f"se cuenta como fiadores a ({','.join(map(str, fiadores))})"
-        f" con deudas de ({','.join(map(str, deudas_fiadores))})."
-    )
-
-    apunte: str = f"el usuario:{index} solicito un prestamo por {valor:,} mas detalles en la pagina del usuario"
-
-    interes: int = msql.obtener_ajuste("interes m tope")
-
-    if valor > msql.obtener_ajuste("tope intereses"):
-        interes = msql.obtener_ajuste("interes M tope")
-
-    valor_incrementar: int = int(valor * (interes / 100))
-
-    msql.increment("prestamos", "dinero_por_intereses", index, valor_incrementar)
-
-    for i, j in zip(fiadores, deudas_fiadores):
-        if i != 1976:
-            msql.increment("prestamos", "deudas_por_fiador", i, j)
-            msql.increment_str("prestamos", "fiador_de", i, str(index))
-
-    msql.increment("prestamos", "prestamos_hechos", index, 1)
-    msql.increment("prestamos", "dinero_en_prestamos", index, valor)
-
-    dinero_por_si = valor - sum(deudas_fiadores)
-    msql.increment("prestamos", "dinero_por_si_mismo", index, dinero_por_si)
-
-    conexion = sql.connect("Fondo.db")
-    cursor = conexion.cursor()
-
-    fiadores = "#".join(map(str, fiadores)) if fiadores else "n"
-    deudas_fiadores = "#".join(map(str, deudas_fiadores)) if deudas_fiadores else "n"
-    calendario = calendario_de_meses()
-
-    interes_prestamo: int = int(valor*interes/100)
-
-    cursor.execute(
-        """
-        INSERT INTO prestamos_hechos (
-            id, estado, interes, intereses_vencidos,
-            revisiones, deuda, fiadores,
-            deuda_con_fiadores, fechas_de_pago,
-            cargar_intereses, interes_generado, deuda_inicial
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            index, 1, interes, 0, 0, valor - interes_prestamo, 
-            fiadores, deudas_fiadores, calendario, 0, interes_prestamo,
-            valor
-        )
-    )
-
-    conexion.commit()
-    conexion.close()
-
-    fa.realizar_anotacion(index, anotacion_final, 0, "GENERAL")
-    fg.hacer_apunte("PRESTAMOS", apunte)
-
-
-@st.dialog("Formulario de prestamo")
-def formulario_de_prestamo(
-    index: int, valor: int, fiadores: list[int] = list,
-    deudas_fiadores: list[int] = list,
-) -> None:
-    st.header(f"№ {index}: {msql.obtener_ig('nombre', index).title()}")
-    st.divider()
-
-    st.subheader(f"Valor de el prestamo: {valor:,}")
-
-    st.table(
-        pd.DataFrame(
-            {
-                "Fiadores": fiadores,
-                "Deudas con fiadores": list(map(lambda x: f"{x:,}", deudas_fiadores)),
-            }
-        )
-    )
-    st.divider()
-
-    if st.button("Realizar prestamo", key="BotonNoSe"):
-        escribir_prestamo(index, valor, fiadores, deudas_fiadores)
-        st.toast("Anotacion hecha", icon="✅")
-        time.sleep(1)
-        st.rerun()
-
-
-def pagar_un_prestamo(index: int, monto: int, codigo: int) -> None:
-    anotacion: str = f"se ha pagado {monto:,} al prestamo numero {codigo}"
-    apunte: str = f"usuario:{index} pago {monto:,} al prestamo:{codigo} (codigo)"
-
-    # hacer anotacion
-    fa.realizar_anotacion(index, anotacion, 0, "GENERAL")
-    fg.hacer_apunte("PRESTAMOS", apunte)
-
-    # obtener datos
-    conexion = sql.connect("Fondo.db")
-    cursor = conexion.cursor()
-
-    cursor.execute(
-        f"""
-        SELECT
-            ph.intereses_vencidos, ph.deuda,
-            ph.fiadores, ph.deuda_con_fiadores,
-            ph.interes_generado
-        FROM prestamos_hechos ph
-        WHERE ph.codigo = {codigo}
-        """
-    )
-
-    # pago de intereses
-    intereses_vencidos, deuda, fiadores, deuda_con_fiadores, interes_geneado = cursor.fetchall()[0]
-
-    if intereses_vencidos > 0:
-        if monto >= intereses_vencidos:
-            cursor.execute(
-                f"""
-                UPDATE prestamos_hechos
-                SET intereses_vencidos = 0, interes_generado = {interes_geneado + intereses_vencidos}
-                WHERE codigo = {codigo}
-                """
-            )
-
-            monto -= intereses_vencidos
-
-        else:
-            cursor.execute(
-                f"""
-                UPDATE prestamos_hechos
-                SET intereses_vencidos = {intereses_vencidos - monto}, interes_generado = {interes_geneado + monto}
-                WHERE codigo = {codigo}
-                """
-            )
-
-            monto = 0
-
-    if monto <= 0:
-        conexion.commit()
-        conexion.close()
-        return None
-
-    # pago de fiadores
-    monto_pago = monto
-
-    index_1 = []
-    index_2 = []
-
-    if fiadores not in {"n", "1976"}:
-        fiadores = map(int, fiadores.split("#"))
-        deuda_con_fiadores = map(int, deuda_con_fiadores.split("#"))
-        descuento: int = 0
-
-        for i, j in enumerate(fiadores):
-            if j != 1976:
-                if deuda_con_fiadores[i] > monto_pago:
-                    descuento = -monto_pago
-                    deuda_con_fiadores[i] -= monto_pago
-                    monto_pago = 0
-                else:
-                    descuento = -deuda_con_fiadores[i]
-                    deuda_con_fiadores[i] = 0
-                    monto_pago += descuento
-
-                index_1.append(j)
-                index_2.append(descuento)
-
-        fiadores = "#".join(map(str, fiadores))
-        deuda_con_fiadores = "#".join(map(str, deuda_con_fiadores))
-
-        cursor.execute(
-            f"""
-            UPDATE prestamos_hechos
-            SET
-                fiadores = '{fiadores}',
-                deuda_con_fiadores = '{deuda_con_fiadores}'
-            WHERE codigo = {codigo}
-            """
-        )
-
-    # pago de deuda
-    cursor.execute(
-        f"""
-        UPDATE prestamos_hechos
-        SET
-            deuda = deuda + {-monto}
-        WHERE codigo = {codigo}
-        """
-    )
-
-    # rectificar inactividad
-    cursor.execute(
-        f"""
-        UPDATE prestamos_hechos
-        SET
-            estado = 0
-        WHERE
-            codigo = {codigo} AND
-            (intereses_vencidos + deuda) <= 0
-        """
-    )
-
-    conexion.commit()
-    conexion.close()
-
-    for i, j in zip(index_1, index_2):
-        msql.increment("prestamos", "deudas_por_fiador", i, j)
-
+    return {
+        "capital": capital,
+        "capital_disponible": capital_disponible,
+        "deudas_por_fiador": deudas_por_fiador,
+        "fiador_de": fiador_de,
+        "tabla": df,
+        "total_deuda": total_deuda,
+        "total_interes": total_interes,
+        "total_disponible": total_disponible
+    }
+
+# ======================================================================================================================
+# PAGAR PRESTAMOS
 
 def obtener_deuda_total(codigo: int) -> int:
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
     cursor.execute(
-        f"""
-        SELECT
-            (ph.intereses_vencidos + ph.deuda)
-        FROM prestamos_hechos ph
-        WHERE ph.codigo = {codigo}
         """
+        SELECT
+            (ph.interes_vencido + ph.deuda)
+        FROM prestamos_hechos ph
+        WHERE ph.codigo = ?
+        """, (codigo, )
     )
-
     dato = cursor.fetchall()[0][0]
     conexion.close()
 
     return dato
 
 
-@st.dialog("Pago de prestamo")
-def formato_de_abono(index: int, monto: int, codigo: int):
-    deuda: int = obtener_deuda_total(codigo)
+def obtener_datos_prestamo(codigo: int) -> list[str|int]:
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
 
-    st.divider()
-    st.subheader("Conceptos de pago:")
-    st.table(
-        {
-            "Concepto": ["Deuda actual", "Monto a pagar"],
-            "Valor": [f"{deuda:,}", f"{monto:,}"],
-        }
+    cursor.execute(
+        """
+        SELECT 
+            ph.deuda,
+            ph.interes_vencido,
+            ph.fiadores,
+            ph.deuda_con_fiadores 
+        FROM prestamos_hechos ph
+        WHERE ph.codigo = ?
+        """, (codigo, )
     )
+    dato = cursor.fetchall()[0]
+    conexion.close()
 
-    st.subheader("Deuda despues del pago:")
-    st.markdown(f"### *{deuda - monto:,}*")
-
-    st.divider()
-    if st.button("Pagar", key="que haces aca?"):
-        pagar_un_prestamo(index, monto, codigo)
-        st.rerun()
+    return dato
 
 
-def obtener_codigos(index: int) -> list[int, ...]:  # type: ignore
+def obtener_valor(columna: str, codigo: int) -> str | int:
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
     cursor.execute(
         f"""
-        SELECT
-            ph.codigo
-        FROM prestamos_hechos ph
-        WHERE
-            ph.id = {index} AND ph.estado = 1
+        SELECT {columna}
+        FROM prestamos_hechos
+        WHERE codigo = {codigo}
         """
     )
 
-    datos = cursor.fetchall()
+    valor = cursor.fetchall()[0][0]
     conexion.close()
 
-    if len(datos) == 0:
-        return []
-
-    return [i[0] for i in datos]
+    return valor
 
 
-def rectificar_pago(codigo: int, monto: int, idx: int) -> (bool, str):  # type: ignore
+def guardar_valor(columna: str, codigo: int, nuevo_valor: int | str) -> None:
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    cursor.execute(
+        f"""
+        UPDATE prestamos_hechos
+        SET {columna} = ?
+        WHERE codigo = {codigo}
+        """, (nuevo_valor, )
+    )
+
+    conexion.commit()
+    conexion.close()
+
+
+def increment_int(columna: str, codigo: int, incremento: int) -> None:
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+
+    cursor.execute(
+        f"""
+        UPDATE prestamos_hechos
+        SET {columna} = {columna} + {incremento}
+        WHERE codigo = {codigo}
+        """
+    )
+
+    conexion.commit()
+    conexion.close()
+
+
+def rectificar_pago(codigo: int, monto: int, idx: int) -> tuple[bool, str]:
     deuda = obtener_deuda_total(codigo)
 
     if monto <= 0:
@@ -583,50 +297,273 @@ def rectificar_pago(codigo: int, monto: int, idx: int) -> (bool, str):  # type: 
     return True, ""
 
 
-def arreglar_asuntos(index: int) -> None:
+@st.dialog("Pago de prestamo")
+def formato_de_abono(index: int, monto: int, codigo: int) -> None:
+    deuda: int = obtener_deuda_total(codigo)
+
+    st.title(f"Codigo del prestamo: {codigo}")
+
+    st.divider()
+    st.subheader("Resumen:")
+    st.table(
+        {
+            "Concepto": ["Deuda actual", "Monto a pagar"],
+            "Valor": [f"{deuda:,}", f"{monto:,}"],
+        }
+    )
+
+    st.markdown(f"## Deuda despues del pago: *{deuda - monto:,}*")
+
+    st.divider()
+    if st.button("Pagar", key="que haces aca?"):
+        abonar_a_prestamo(index, monto, codigo)
+        st.rerun()
+
+
+def abonar_a_prestamo(index: int, monto: int, codigo: int) -> None:
+    # hacer anotacion
+    fa.realizar_anotacion(
+        index,
+        f"se ha pagado {monto:,} al prestamo numero {codigo}",
+        0,
+        "GENERAL"
+    )
+
+    # obtener datos
+    deuda, interes, fiadores, deuda_con_fiadores = obtener_datos_prestamo(codigo)
+
+    # rectificar_inactividad
+    if deuda + interes <= monto:
+        guardar_valor("estado_de_pago", codigo, 0)
+
+    # pagar intereses
+    if interes > 0:
+        if monto > interes:
+            guardar_valor("interes_vencido", codigo, 0)
+            increment_int("interes_generado", codigo, interes)
+            monto -= interes
+        else:
+            increment_int("interes_vencido", codigo, -monto)
+            increment_int("interes_generado", codigo, monto)
+            return
+
+    # pago de fiadores
+    monto_a_fiadores = monto
+
+    if fiadores != "n":
+        fiadores_l: list[int] = list(map(int, fiadores.split("#")))
+        deuda_con_fiadores_l: list[int] = list(map(int, deuda_con_fiadores.split("#")))
+
+        for idx, fiador in enumerate(fiadores_l):
+            if fiador != 1976:
+                if deuda_con_fiadores_l[idx] > monto_a_fiadores:
+                    deuda_con_fiadores_l[idx] -= monto_a_fiadores
+                    descuento = monto_a_fiadores
+                else:
+                    descuento = deuda_con_fiadores_l[idx]
+                    monto_a_fiadores -= deuda_con_fiadores_l[idx]
+                    deuda_con_fiadores_l[idx] = 0
+
+                msql.increment_int("prestamos", "deudas_por_fiador", fiador, -descuento)
+
+            if monto_a_fiadores <= 0:
+                break
+
+        deuda_con_fiadores = "#".join(map(str, deuda_con_fiadores_l))
+        guardar_valor("deuda_con_fiadores", codigo, deuda_con_fiadores)
+
+    # pago de deuda
+    increment_int("deuda", codigo, -monto)
+
+# ======================================================================================================================
+# HACER PRESTAMOS
+
+def capital_disponible_usr(index: int) -> int:
+    if index == 1976:
+        return 1_000_000_000
+
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
     cursor.execute(
         f"""
         SELECT
-            ph.codigo,
-            ph.fechas_de_pago,
-            ph.revisiones
-        FROM prestamos_hechos ph
-        WHERE ph.id = {index} AND ph.estado = 1
+            c.pago * (
+                SELECT a.valor_n
+                FROM ajustes a 
+                WHERE a.ajuste = 'capital usable'
+            )/100 - (
+                SELECT 
+                    IFNULL(SUM(ph.deuda + ph.interes_vencido), 0)
+                FROM prestamos_hechos ph
+                WHERE ph.idx = {index}
+            ) - (
+                SELECT p.deudas_por_fiador
+                FROM prestamos p
+                WHERE p.id = {index}
+            )
+        FROM capital c
+        WHERE c.id = {index}
         """
     )
+    capital: int = cursor.fetchall()[0][0]
+    conexion.close()
 
-    datos = cursor.fetchall()
+    return capital
 
-    if len(datos) == 0:
-        conexion.close()
-        return None
 
-    fecha_actual = datetime.datetime.now()
-
-    for i, j, k in datos:
-        fechas_pasadas: int = sum(
-            map(
-                lambda x: x < fecha_actual,
-                map(lambda y: datetime.datetime(*map(int, y.split("/"))), j.split("_")),
-            )
+def calendario_de_meses(fecha_actual: datetime.datetime = datetime.datetime.now()) -> str:
+    fecha_de_cierre: datetime.datetime = datetime.datetime(
+        *map(
+            int,
+            msql.obtener_ajuste("fecha de cierre", False).split("/")
         )
+    )
 
-        if fechas_pasadas > k:
-            for _ in range(fechas_pasadas - k):
-                cursor.execute(
-                    f"""
-                    UPDATE prestamos_hechos
-                    SET
-                        intereses_vencidos = intereses_vencidos + (
-                            deuda * interes
-                        ) / 100,
-                        revisiones = {fechas_pasadas}
-                    WHERE codigo = {i}
-                    """
+    fechas: list = []
+
+    dias_memoria: int = fecha_actual.day
+    while True:
+        dias_uso: int = dias_memoria
+        while True:
+            try:
+                temporal_ahora: datetime.datetime = datetime.datetime(
+                    fecha_actual.year + (fecha_actual.month + 1 > 12),
+                    fecha_actual.month % 12 + 1,
+                    dias_uso
                 )
+                fecha_actual = temporal_ahora
+                break
+            except ValueError:
+                dias_uso -= 1
 
+        if fecha_actual < fecha_de_cierre:
+            fechas.append(fecha_actual.strftime("%Y/%m/%d"))
+        else:
+            break
+
+    if not fechas:
+        return fecha_de_cierre.strftime("%Y/%m/%d")
+
+    return "_".join(fechas)
+
+
+def rectificar_viavilidad(
+    index: int, valor: int,
+    fiadores: list[int] = list,  deudas_con_fiadores: list[int] = list
+) -> tuple[bool, str]:
+    # rectificar administrador
+    if not fg.rect_estado(index):
+        return False, "El usuario no esta activo"
+
+    if index in fiadores:
+        return False, "Un usuario no puede ser su propio fiador"
+    if len(fiadores) != len(set(fiadores)):
+        return False, "No se permiten fiadores repetidos"
+
+    sum_deudas: int = sum(deudas_con_fiadores)
+    if valor == 0:
+        return False, "Hay razon para hacer un prestamo?"
+    if sum_deudas > valor:
+        return False, "La deuda con fiadores supera el valor de el prestamo"
+
+    capital_disponible: int = capital_disponible_usr(index)
+
+    # rectificar para capital negativo o positivo
+    if capital_disponible > 0:
+        if valor - sum_deudas > capital_disponible:
+            return False, "El dinero de el usuario no alcanza para el prestamo"
+        if sum_deudas + capital_disponible < valor:
+            return False, "No alcanza para solitar el prestamo, solicite mas fiadores"
+    else:
+        if len(fiadores) == 0:
+            return False, "El usuario no tiene el capital disponible, solicite fiadores"
+        if sum_deudas < valor:
+            return (
+                False,
+                "No alcanza para solitar el prestamo, rectifique que el "
+                "dinero de los fiadores alcance para el prestamo",
+            )
+
+    for idx, fiador in enumerate(fiadores):
+        capital_de_fiador: int = capital_disponible_usr(fiador)
+        if capital_de_fiador < deudas_con_fiadores[idx]:
+            return False, f"El fiador con puesto №{fiador} no cuenta con el dinero"
+        if not fg.rect_estado(fiador):
+            return False, f"El fiador con puesto №{fiador} no esta activo"
+
+    return True, ""
+
+
+def escribir_prestamo(
+    index: int, valor: int, motivo: str,
+    fiadores: list[int] = list, deudas_fiadores: list[int] = list
+) -> None:
+    anotacion_final: str = (
+        f"Se ha hecho un prestamo por {valor:,}. "
+        f"fiadores: {','.join(map(str, fiadores))}, "
+        f"deudas con ellos: {','.join(map(str, deudas_fiadores))}."
+    )
+    fa.realizar_anotacion(index, anotacion_final, 0, "GENERAL")
+
+    interes: int = msql.obtener_ajuste("interes m tope")
+
+    if valor > msql.obtener_ajuste("tope intereses"):
+        interes = msql.obtener_ajuste("interes M tope")
+
+    interes_inicial: int = int(valor * interes / 100)
+
+    for fiador, deuda in zip(fiadores, deudas_fiadores):
+        if fiador != 1976:
+            msql.increment_int("prestamos", "deudas_por_fiador", fiador, deuda)
+            msql.increment_str("prestamos", "fiador_de", fiador, str(index))
+
+    capital_retirado = valor - sum(deudas_fiadores)
+    msql.increment_int("capital", "retirado", index, capital_retirado)
+
+    fiadores = "#".join(map(str, fiadores)) if fiadores else "n"
+    deudas_fiadores = "#".join(map(str, deudas_fiadores)) if deudas_fiadores else "n"
+    calendario = calendario_de_meses()
+
+    conexion = sql.connect("Fondo.db")
+    cursor = conexion.cursor()
+    cursor.execute(
+        """
+        INSERT INTO prestamos_hechos (
+            idx, estado_de_pago, interes,
+            interes_vencido, interes_generado,
+            deuda, monto, fechas_de_pago,
+            revisiones, fiadores, deuda_con_fiadores,
+            motivo
+        )
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+        """, (
+            index, 1, interes, 0, interes_inicial, valor, valor, calendario,
+            0, fiadores, deudas_fiadores, motivo
+        )
+    )
     conexion.commit()
     conexion.close()
+
+
+@st.dialog("Formulario de prestamo")
+def formulario_de_prestamo(
+    index: int, valor: int , usr_data: dict, motivo: str,
+    fiadores: list[int] = list, deudas_fiadores: list[int] = list
+) -> None:
+    st.header(f"№ {index}: {usr_data["nombre"]}")
+    st.divider()
+
+    st.subheader(f"Valor de el prestamo: {valor:,}")
+
+    st.table(
+        pl.DataFrame({
+            "Fiadores": fiadores,
+            "Deudas con fiadores": list(map(lambda x: f"{x:,}", deudas_fiadores)),
+        })
+    )
+    st.divider()
+
+    if st.button("Realizar prestamo", key="BotonNoSe"):
+        escribir_prestamo(index, valor, motivo, fiadores, deudas_fiadores)
+        st.rerun()

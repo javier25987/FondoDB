@@ -3,7 +3,7 @@ import src.funciones.anotaciones as fa
 import src.msql as msql
 import streamlit as st
 import sqlite3 as sql
-import pandas as pd
+import polars as pl
 import datetime
 import time
 
@@ -60,57 +60,76 @@ def obtener_bloqueos(index) -> list[int]:
     return [int(i) for i in bloqueos.split("_")]
 
 
+def multas_gen(diff: int):
+    count: int = 1
+    while True:
+        yield count
+        if count < diff:
+            count += 1
+
+
 def rectificar_cuotas(index: int) -> None:
+    semanas_revisadas: int = msql.obtener_valor("cuotas", "revisiones", index)
+
+    if semanas_revisadas >= 50:
+        return # no hacemos nada  si ya se revisaron todas las semanas
+
     calendario: list[datetime.datetime] = list(
         map(
-            lambda x: datetime.datetime(*x), #type:ignore
+            lambda x: datetime.datetime(*x),
             map(
                 lambda y: map(int, y.split("/")),
                 msql.obtener_ajuste("calendario", False).split("_"),
             ),
         )
     )
-
     fecha_actual = datetime.datetime.now()
-
     semanas_a_revisar: int = sum(map(lambda x: int(x < fecha_actual), calendario))
-    semanas_revisadas: int = msql.obtener_valor("cuotas", "revisiones", index)
 
     if semanas_a_revisar > semanas_revisadas:
-        multas: list[int] = descomprimir_to_array(
-            msql.obtener_valor("cuotas", "multas", index)
-        ) # type: ignore
-
-        cobrar_multas: bool = bool(msql.obtener_ajuste("cobrar multas"))
-
+        # creamos una lista para registrar todas las semanas pagas
+        array_semanas: list[int] = [0]*50
+        # 1: pagas
+        # 0: bloquedas o deudas (de igual manera multa)
+        bloqueos: set[int,] = set(obtener_bloqueos(index))
         pagas: int = msql.obtener_valor("cuotas", "pagas", index)
+        idx: int = 0
+
+        while pagas > 0:
+            if idx not in bloqueos:
+                array_semanas[idx] = 1
+                pagas -= 1
+
+            idx += 1
+
+        #contamos todas las deudas que debe tener la persona
         deudas: int = 0
-
-        bloqueos: set[int, ] = set(obtener_bloqueos(index))
-
-        for i in range(50):
-            if calendario[i] > fecha_actual:
-                break
-
-            if i in bloqueos:
-                multas[i] += 1
-                continue
-
-            if pagas < 1:
-                if cobrar_multas:
-                    multas[i] += 1
+        for i in range(semanas_a_revisar):
+            if array_semanas[i] == 0:
                 deudas += 1
 
-            pagas -= 1
-                
+        for i in bloqueos:
+            if i < semanas_a_revisar:
+                deudas -= 1
+
+        # nos preparamos para contar todas las multas
+        multas: list[int] = descomprimir_to_array(
+            msql.obtener_valor("cuotas", "multas", index)
+        )
+        gen_multas = multas_gen(semanas_a_revisar - semanas_revisadas)
+        cobrar_multas: bool = bool(msql.obtener_ajuste("cobrar multas"))
+
+        # contamos todas las multas desde la semana actual hacia atras
+        for i in range(semanas_a_revisar-1, -1, -1):
+            if array_semanas[i] == 0 and cobrar_multas:
+                multas[i] += next(gen_multas)
+
+        # guardamos todos los valores
         msql.guardar_valor_n("cuotas", "adeudas", index, deudas)
         msql.guardar_valor_n("cuotas", "revisiones", index, semanas_a_revisar)
 
         msql.guardar_valor_t(
-            "cuotas", 
-            "multas", 
-            index, 
-            comprimir_of_array(multas)
+            "cuotas", "multas", index, comprimir_of_array(multas)
         )
 
 # ========================================================= Inicio de la pagina
@@ -119,7 +138,7 @@ def abrir_usuario(index: int) -> tuple[bool, str]:
     if index < 0 or index > msql.obtener_ajuste("usuarios"):
         return False, "El numero de usuario esta fuera de rango"
 
-    rectificar_cuotas(index)
+    #TODO: hacer la caja de pregunta para bloquear al usuario
 
     return True, ""
 
@@ -195,7 +214,7 @@ def obtener_datos_usuario(index) -> dict[str, any]: # type: ignore
         "nombre": msql.obtener_valor("informacion_general", "nombre", index).title(),
         "telefono": msql.obtener_valor("informacion_general", "telefono", index),
         "puestos": msql.obtener_valor("informacion_general", "puestos", index),
-        "tabla1": pd.DataFrame(
+        "tabla1": pl.DataFrame(
             {
                 "cuota №": numeros[:25],
                 "fechas": calendario[:25],
@@ -204,7 +223,7 @@ def obtener_datos_usuario(index) -> dict[str, any]: # type: ignore
                 "multas pagas": multas_pagas[:25],
             }
         ),
-        "tabla2": pd.DataFrame(
+        "tabla2": pl.DataFrame(
             {
                 "cuota №": numeros[25:],
                 "fechas": calendario[25:],

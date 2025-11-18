@@ -1,11 +1,5 @@
 # importamos las bibliotecas
-# import src.asuntos.rectificado as a_r
 import streamlit as st
-
-# # miramos si hay que rectificar
-# if "todo_rectificado" not in st.session_state:
-#     st.session_state.todo_rectificado = 1
-#     a_r.rectificar_todo()
 
 # configuracion del tamanio de la pagina
 st.set_page_config(layout="wide")
@@ -46,7 +40,6 @@ paginas_generales: list = [
     st.Page("src/paginas/Anotaciones.py", title="Anotaciones", icon="📘"),
     st.Page("src/paginas/VerSocios.py", title="Ver Usuarios", icon="🔎"),
     st.Page("src/paginas/Registros.py", title="Registros", icon="📚"),
-    # st.Page("src/paginas/DocumentosFondo.py", title="Documentos", icon="📄"),
 ]
 
 # paginas de el modo administardor

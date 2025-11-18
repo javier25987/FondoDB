@@ -1,5 +1,5 @@
-import streamlit as st
 import src.funciones.analis_usuarios as f_au
+import streamlit as st
 
 index: int = st.session_state.usuario
 

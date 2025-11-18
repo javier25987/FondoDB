@@ -1,7 +1,7 @@
 import src.funciones.prestamos as fp
 import streamlit as st
 import sqlite3 as sql
-import pandas as pd
+import polars as pl
 import time
 
 
@@ -34,7 +34,7 @@ def menu_para_insertar_socio(
             st.rerun()
 
 
-def mostrar_usuarios() -> pd.DataFrame:
+def mostrar_usuarios() -> pl.DataFrame:
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
@@ -52,10 +52,10 @@ def mostrar_usuarios() -> pd.DataFrame:
 
     datos = list(zip(*datos))
 
-    return pd.DataFrame({"ID": datos[0], "Nombre": datos[1], "Telefono": datos[2]})
+    return pl.DataFrame({"ID": datos[0], "Nombre": datos[1], "Telefono": datos[2]})
 
 
-def realizar_consulta(consulta: str, commit: bool) -> pd.DataFrame:
+def realizar_consulta(consulta: str, commit: bool) -> pl.DataFrame:
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
@@ -86,7 +86,7 @@ def realizar_consulta(consulta: str, commit: bool) -> pd.DataFrame:
 
 def leer_estructura() -> str:
     with open("src/datos_tablas.md", "r") as f:
-        archivos: str = f.readlines()
+        archivos: list[str] = f.readlines()
         f.close()
 
     return "".join(archivos)

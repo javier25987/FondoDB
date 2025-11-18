@@ -1,6 +1,6 @@
 # import src.funciones.general as fg
-import src.msql as msql
 import src.funciones.rifas as fr
+import src.msql as msql
 import streamlit as st
 
 key = 0

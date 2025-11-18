@@ -2,7 +2,7 @@ import src.funciones.prestamos as fp
 import src.funciones.general as fg
 import streamlit as st
 import sqlite3 as sql
-import pandas as pd
+import polars as pl
 import datetime
 import time
 
@@ -64,7 +64,7 @@ def obtener_tabla_rifas():
         dict_table["costos_de_administracion"].append(c_admis)
         dict_table["ganancia_por_boleta"].append(g_boleta)
 
-    return pd.DataFrame(dict_table)
+    return pl.DataFrame(dict_table)
 
 
 def cargar_datos_de_rifa(

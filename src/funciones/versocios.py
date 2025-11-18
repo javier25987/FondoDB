@@ -1,13 +1,10 @@
-import pandas as pd
 import sqlite3 as sql
+import polars as pl
 
 
-def buscar_nombre(nombre: str) -> pd.DataFrame:
+def buscar_nombre(nombre: str) -> pl.DataFrame:
     conexion = sql.connect("Fondo.db")
-    cursor = conexion.cursor()
-
-    cursor.execute(
-        f"""
+    querry: str = f"""
         SELECT
             ig.id,
             ig.nombre,
@@ -15,113 +12,71 @@ def buscar_nombre(nombre: str) -> pd.DataFrame:
             ig.estado
         From informacion_general ig
         WHERE ig.nombre LIKE '%{nombre}%'
-        """
-    )
-
-    datos = cursor.fetchall()
+    """
+    datos = pl.read_database(querry, conexion)
     conexion.close()
 
-    if not datos:
-        return pd.DataFrame({})
-
-    datos = list(zip(*datos))
-
-    datos[3] = map(lambda x: "✅ activo" if bool(x) else "🚨 desactivado", datos[3])
-
-    resultado = {
-        "Numero": datos[0],
-        "Nombre": datos[1],
-        "telefono": datos[2],
-        "estado": datos[3],
-    }
-
-    return pd.DataFrame(resultado)
+    return datos # lambda x: "✅ activo" if bool(x) else "🚨 desactivado", datos[3])
 
 
-def tabla_acuerdo() -> pd.DataFrame:
+def tabla_acuerdo() -> pl.DataFrame:
     conexion = sql.connect("Fondo.db")
-    cursor = conexion.cursor()
+    querry: str = """
+    SELECT
+        c.id, 
+        ig.nombre,
+        c.pago,
+        c.retirado
+    FROM capital c 
+    JOIN informacion_general ig
+    ON c.id = ig.id
+    WHERE c.retirado < c.pago/2
+    """
 
-    cursor.execute(
-        """
-        SELECT
-            ig.id,
-            ig.nombre,
-            ig.capital,
-            p.dinero_por_si_mismo
-        From informacion_general ig
-        JOIN prestamos p
-        ON
-            ig.id = p.id
-        WHERE
-            p.dinero_por_si_mismo < ig.capital/2
-        """
-    )
-
-    datos = cursor.fetchall()
+    datos = pl.read_database(querry, conexion)
     conexion.close()
 
-    datos = list(zip(*datos))
-
-    datos[2] = map(lambda x: f"{x:,}", datos[2])
-    datos[3] = map(lambda x: f"{x:,}", datos[3])
-
-    resultado = {
-        "Numero": datos[0],
-        "Nombre": datos[1],
-        "Capital": datos[2],
-        "Dinero por si mismo": datos[3],
-    }
-
-    return pd.DataFrame(resultado)
+    return datos
 
 
-def rectificar_numero(boleta_a_buscar: str, poscion_boleta: str) -> bool:
+def rectificar_numero(boleta_a_buscar: str) -> bool:
     if boleta_a_buscar == "":
         return False
 
     return True
 
 
-def buscar_boleta(rifa_a_buscar: str, boleta_a_buscar: str):
+def buscar_boleta(rifa_a_buscar: str, boleta_a_buscar: str) -> pl.DataFrame:
     conexion = sql.connect("Fondo.db")
-    cursor = conexion.cursor()
 
-    cursor.execute(
-        f"""
+    query: str = f"""
         SELECT ig.id, ig.nombre, br.boleta
         FROM {rifa_a_buscar} br
         JOIN informacion_general ig 
         ON br.dada_a = ig.id 
         WHERE br.boleta LIKE '%{boleta_a_buscar}%'
-        """
-    )
+    """
 
-    datos = cursor.fetchall()
+    df: pl.DataFrame = pl.read_database(query, conexion)
     conexion.close()
 
-    tabla = {
-        "Puesto": [],
-        "Nombre": [],
-        "Boleta": []
-    }
+    df.rename({
+        "id": "Puesto",
+        "nombre": "Nombre",
+        "boleta": "Boleta"
+    })
 
-    for p, n, b in datos:
-        tabla["Puesto"].append(p)
-        tabla["Nombre"].append(n)
-        tabla["Boleta"].append(b)
-
-    return pd.DataFrame(tabla)
+    return df
 
 
-def mostrar_todas_boletas(rifa_a_buscar: str) -> pd.DataFrame:
+def mostrar_todas_boletas(rifa_a_buscar: str) -> pl.DataFrame:
     query = f"SELECT ig.id, ig.nombre, br.boleta FROM {rifa_a_buscar} br JOIN informacion_general ig ON br.dada_a = ig.id"
     
     with sql.connect("Fondo.db") as conexion:
-        df = pd.read_sql_query(query, conexion)
+        df = pl.read_database(query, conexion)
 
-    if df.empty:
-        return pd.DataFrame()
+    if df.is_empty():
+        return pl.DataFrame()
     
     # Renombrar columnas si quieres mantener nombres personalizados
     df.columns = ["Puesto", "Nombre", "Boleta"]

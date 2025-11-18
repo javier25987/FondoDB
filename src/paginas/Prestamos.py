@@ -1,6 +1,5 @@
 import src.funciones.prestamos as fp
 import src.funciones.general as fg
-import src.msql as msql
 import streamlit as st
 import webbrowser
 
@@ -21,31 +20,38 @@ if index == -1:
     st.title("Usuario indeterminado")
     st.stop()
 
-st.title(f"№ {index} - {msql.obtener_ig('nombre', index).title()}")
+fp.rectificar_prestamos(index)
+user = fp.obtener_datos_usuario(index)
+
+st.title(f"№ {index} - {user["nombre"]}")
 
 tab = st.tabs(["Prestamos", "Solicitar Prestamo", "Consultar Capital"])
 
 with tab[0]:
-    tablas_de_prestamos: list = fp.crear_tablas_de_prestamos(index)
+    tablas_de_prestamos: list[dict] = fp.crear_tablas_de_prestamos(index)
 
     mostrar_opcion_pago: bool = False
     no_hay_prestamos: bool = True
 
-    for prst in tablas_de_prestamos:
+    if tablas_de_prestamos:
+        mostrar_opcion_pago = True
+        no_hay_prestamos = False
+
+    for p in tablas_de_prestamos:
+        st.subheader(f"Codigo: {p["codigo"]}")
+
         cols_t = st.columns([8, 2])
 
         with cols_t[0]:
-            st.subheader(prst[0])
-            st.table(prst[1])
-            st.table(prst[2])
-            st.subheader(prst[3])
-            st.table(prst[4])
+            st.table(p["tabla_interes"])
+            st.table(p["tabla_deuda"])
+            st.subheader(f"Deuda actual: {p["deuda"]:,}")
+            st.table(p["tabla_fiadores"])
 
         with cols_t[1]:
-            st.table(prst[5])
-
-        no_hay_prestamos = False
-        mostrar_opcion_pago = True
+            st.table(p["fechas"])
+            st.subheader(f"Estado: {p["estado"]}")
+            st.subheader(f"Motivo: {p["motivo"]}")
 
         st.divider()
 
@@ -66,7 +72,7 @@ with tab[0]:
         with cols[2]:
             if st.button("Pagar"):
                 if st.session_state.admin:
-                    estado_pago: (bool, str) = fp.rectificar_pago(  # type: ignore
+                    estado_pago: tuple[bool, str] = fp.rectificar_pago(
                         codigo, monto_a_pagar, index
                     )
 
@@ -80,7 +86,7 @@ with tab[0]:
 
 with tab[1]:
     st.subheader("Carta de solicitud: ")
-    if st.button("Hacer carta"):
+    if st.button("Abrir carta"):
         webbrowser.open_new("./src/text/carta.pdf")
     st.divider()
 
@@ -89,6 +95,7 @@ with tab[1]:
 
     with col2_1:
         valor_prestamo: int = st.number_input("Valor de el prestamo: ", value=0, step=1)
+        motivo_prestamo: str = st.selectbox("Motivo del prestamo:", ("PG", "ACUERDO"))
 
     with col2_2:
         numero_de_fiadores: int = st.number_input(
@@ -119,55 +126,47 @@ with tab[1]:
 
     if st.button("Realizar prestamo"):
         if st.session_state.admin:
-            if not fg.rect_estado(index):
-                st.toast("El usuario no esta activo", icon="🚨")
-                st.stop()
-
-            fiadores_prestamo: list[int] = []
-            deudas_prestamo: list[int] = []
-
-            for i in range(numero_de_fiadores):
-                fiadores_prestamo.append(st.session_state[f"numero_fiador_{i}"])
-                deudas_prestamo.append(st.session_state[f"deuda_fiador_{i}"])
+            fiadores_prestamo: list[int] = [
+                st.session_state[f"numero_fiador_{i}"]
+                for i in range(numero_de_fiadores)
+            ]
+            deudas_prestamo: list[int] = [
+                st.session_state[f"deuda_fiador_{i}"]
+                for i in range(numero_de_fiadores)
+            ]
 
             estado_prestamo: tuple[bool, str] = fp.rectificar_viavilidad(
-                index,
-                valor_prestamo,
-                fiadores_prestamo,
-                deudas_prestamo,
+                index, valor_prestamo, fiadores_prestamo, deudas_prestamo,
             )
 
             if estado_prestamo[0]:
                 st.balloons()
                 fp.formulario_de_prestamo(
-                    index,
-                    valor_prestamo,
-                    fiadores_prestamo,
-                    deudas_prestamo,
+                    index, valor_prestamo, user, motivo_prestamo,
+                    fiadores_prestamo, deudas_prestamo,
                 )
             else:
-                st.error(estado_prestamo[1], icon="🚨")
+                st.toast(estado_prestamo[1], icon="🚨")
         else:
             fg.advertencia()
 
-with tab[2]:
-    estado: list = fp.consultar_capital_disponible(index)
+with (tab[2]):
+    data: dict = fp.capital_disponible_mostrar(index)
 
     st.subheader("Capital")
-    st.write(f"capital guardado: {estado[0]:,}")
-    st.write(f"Capital disponible para retirar: {estado[1]:,}")
+    st.write(f"capital pagado: {data["capital"]:,}")
+    st.write(f"Capital disponible para retirar: {data["capital_disponible"]:,}")
 
     st.subheader("Deudas por fiador:")
 
-    st.write(f"Deudas por fiador: {estado[2]:,}.")
-    st.write(f"Fiador de: {estado[3]}")
+    st.write(f"Deudas por fiador: {data["deudas_por_fiador"]:,}.")
+    st.write(f"Fiador de: {data["fiador_de"]}")
 
     st.subheader("Deudas en prestamos:")
-    st.table(estado[4])
-    st.markdown(f"##### TOTAL: {estado[7][0]:,}")
+    st.table(data["tabla"])
+    st.markdown(f"##### Total Deudas: {data["total_deuda"]:,}")
+    st.markdown(f"##### Total Intereses: {data["total_interes"]:,}")
 
-    st.subheader("Deudas por intereses vencidos:")
-    st.table(estado[5])
-    st.markdown(f"##### TOTAL: {estado[7][1]:,}")
+    st.divider()
 
-    st.header(f"Dinero disponible para retirar: {estado[6]:,}")
+    st.header(f"Dinero disponible para retirar: {data["total_disponible"]:,}")

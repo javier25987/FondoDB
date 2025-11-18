@@ -53,4 +53,61 @@ Este proyecto fue hecho para mi padre y mi madre a los cuales les agradezo todo 
 
 GRACIAS PAPA Y MAMA
 
+```
+def rectificar_cuotas(index: int) -> None:
+    semanas_revisadas: int = msql.obtener_valor("cuotas", "revisiones", index)
+
+    if semanas_revisadas >= 50:
+        return
+
+    calendario: list[datetime.datetime] = list(
+        map(
+            lambda x: datetime.datetime(*x),
+            map(
+                lambda y: map(int, y.split("/")),
+                msql.obtener_ajuste("calendario", False).split("_"),
+            ),
+        )
+    )
+    fecha_actual = datetime.datetime.now()
+    semanas_a_revisar: int = sum(map(lambda x: int(x < fecha_actual), calendario))
+
+
+    if semanas_a_revisar > semanas_revisadas:
+        multas: list[int] = descomprimir_to_array(
+            msql.obtener_valor("cuotas", "multas", index)
+        )
+
+        cobrar_multas: bool = bool(msql.obtener_ajuste("cobrar multas"))
+
+        pagas: int = msql.obtener_valor("cuotas", "pagas", index)
+        deudas: int = 0
+
+        bloqueos: set[int, ] = set(obtener_bloqueos(index))
+
+        for i in range(50):
+            if calendario[i] > fecha_actual:
+                break
+
+            if i in bloqueos:
+                multas[i] += 1
+                continue
+
+            if pagas < 1:
+                if cobrar_multas:
+                    multas[i] += 1
+                deudas += 1
+
+            pagas -= 1
+                
+        msql.guardar_valor_n("cuotas", "adeudas", index, deudas)
+        msql.guardar_valor_n("cuotas", "revisiones", index, semanas_a_revisar)
+
+        msql.guardar_valor_t(
+            "cuotas", 
+            "multas", 
+            index, 
+            comprimir_of_array(multas)
+        )
+```
 

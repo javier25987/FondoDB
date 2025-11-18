@@ -72,4 +72,6 @@ def advertencia():
 
 
 def rect_estado(idx: int) -> bool:
+    if idx == 1976:
+        return True # esto para la rectificacion en prestamos
     return bool(msql.obtener_valor("informacion_general", "estado", idx))

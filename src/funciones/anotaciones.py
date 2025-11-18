@@ -5,7 +5,7 @@ import datetime
 
 
 def abrir_usuario(index: int) -> (bool, str):  # type: ignore
-    if 0 > index >= msql.obtener_ajuste("usuarios"):
+    if index < 0 or index > msql.obtener_ajuste("usuarios"):
         return False, "El numero de usuario esta fuera de rango"
 
     return True, ""
