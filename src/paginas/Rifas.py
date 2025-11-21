@@ -3,8 +3,6 @@ import src.funciones.rifas as fr
 import src.msql as msql
 import streamlit as st
 
-key = 0
-
 rifa_actual: str = "boletas_rifa_2"
 
 index = st.session_state.usuario
@@ -23,14 +21,15 @@ if index == -1:
     st.title("Usuario indeterminado")
     st.stop()
 
-st.title(f"№ {index} - {msql.obtener_ig('nombre', index).title()}")
+user = fr.obtener_datos_usuario(index)
+
+st.title(f"№ {index} - {user["nombre"]}")
 
 tabs = st.tabs(["Rifa Actual", "Rifa 1"])
 
 with tabs[0]:
     cols_act = st.columns(2)
 
-    #
     with cols_act[0]:
         st.subheader("Entrega de boletas:")
 
@@ -39,11 +38,12 @@ with tabs[0]:
         )
 
         if st.button("Entregar boletas"):
-            if len(boletas_selecionadas) != 0:
+            estado: tuple[bool, str] = fr.rectificar_entrega(index, boletas_selecionadas)
+            if estado[0]:
                 st.balloons()
-                fr.entregar_boletas(index, boletas_selecionadas, rifa_actual)
+                fr.entregar_boletas(index, boletas_selecionadas, rifa_actual, user)
             else:
-                st.toast("No hay boletas", icon="🚨")
+                st.toast(estado[1], icon="🚨")
 
     with cols_act[1]:
         st.subheader("Pagos por boletas:")
@@ -53,10 +53,10 @@ with tabs[0]:
         total_a_pagar = st.number_input("Cantidad que desea pagar:", step=1, value=0)
 
         if st.button("Pagar"):
-            estado_pago = fr.rectificar_pago(total_a_pagar, total_adeudado)
+            estado_pago = fr.rectificar_pago(index, total_a_pagar, total_adeudado)
 
             if estado_pago[0]:
-                fr.formlario_de_pago(index, total_a_pagar, total_adeudado)
+                fr.formlario_de_pago(index, total_a_pagar, total_adeudado, user)
             else:
                 st.toast(estado_pago[1], icon="🚨")
 

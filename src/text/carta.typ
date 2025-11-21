@@ -26,11 +26,7 @@ Señores de el fondo, yo `___________________________` usuari@ № `_______` del
 )
 
 
-\
-\
-\
-\
-\
+#v(6cm)
 
 #grid(
   columns: (50%, 50%), 

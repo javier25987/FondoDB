@@ -283,6 +283,9 @@ def increment_int(columna: str, codigo: int, incremento: int) -> None:
 
 
 def rectificar_pago(codigo: int, monto: int, idx: int) -> tuple[bool, str]:
+    if codigo is None:
+        return False, "No hay prestamos activos"
+
     deuda = obtener_deuda_total(codigo)
 
     if monto <= 0:
@@ -328,6 +331,8 @@ def abonar_a_prestamo(index: int, monto: int, codigo: int) -> None:
         0,
         "GENERAL"
     )
+
+    msql.registo(monto)
 
     # obtener datos
     deuda, interes, fiadores, deuda_con_fiadores = obtener_datos_prestamo(codigo)
@@ -505,6 +510,8 @@ def escribir_prestamo(
         f"deudas con ellos: {','.join(map(str, deudas_fiadores))}."
     )
     fa.realizar_anotacion(index, anotacion_final, 0, "GENERAL")
+
+    msql.registo(valor, False)
 
     interes: int = msql.obtener_ajuste("interes m tope")
 

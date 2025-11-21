@@ -138,9 +138,12 @@ def abrir_usuario(index: int) -> tuple[bool, str]:
     if index < 0 or index > msql.obtener_ajuste("usuarios"):
         return False, "El numero de usuario esta fuera de rango"
 
-    #TODO: hacer la caja de pregunta para bloquear al usuario
+    deudas: int = msql.obtener_valor("cuotas", "adeudas", index)
+    if deudas > 3 and bool(msql.obtener_ajuste("anular usuarios")):
+        msql.guardar_valor_n("informacion_general", "estado", index, 0)
 
     return True, ""
+
 
 # ========================================================= Envio de datos para graficos
 

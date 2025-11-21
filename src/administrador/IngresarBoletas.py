@@ -1,3 +1,5 @@
+import time
+
 import src.funciones.ingresar_boletas as fi
 import src.funciones.rifas as fr
 import streamlit as st
@@ -35,6 +37,8 @@ with cols[0]:
         if viavilidad:
             fi.insert_boleta(boletas, tabla_de_boletas)
             ultimo_numero.append(int(boletas[0]))
+            st.toast("Boleta guardada correctamente", icon="✅")
+            time.sleep(1)
             st.rerun()
         else:
             st.toast("El formato de las boletas no es el correcto, por favor rectifique que sea correcto.", icon="🚨")
@@ -60,5 +64,5 @@ with cols[0]:
 with cols[1]:
     boletas_a_mostrar = fi.consultar_boletas_rifa(tabla_de_boletas)
     if boletas_a_mostrar[1]:
-        st.write(boletas_a_mostrar[0])
+        st.table(boletas_a_mostrar[0])
 

@@ -65,11 +65,11 @@ if cols_2[1].button("Iniciar proceso de pago"):
     boton_iniciar_pago = fc.rectificar_boton_iniciar_pago(
         cuotas_a_pagar, multas_a_pagar, index
     )
-    if not boton_iniciar_pago[0]:
-        st.toast(boton_iniciar_pago[1], icon="🚨")
-    else:
+    if boton_iniciar_pago[0]:
         st.balloons()
         fc.formulario_de_pago(index, cuotas_a_pagar, multas_a_pagar, modo_de_pago, user)
+    else:
+        st.toast(boton_iniciar_pago[1], icon="🚨")
 
 st.divider()
 if st.button("Ver ultimo cheque"):

@@ -23,20 +23,21 @@ def tabla_acuerdo() -> pl.DataFrame:
     conexion = sql.connect("Fondo.db")
     querry: str = """
     SELECT
-        c.id, 
-        ig.nombre,
-        c.pago,
-        c.retirado
+        c.id AS Id, 
+        ig.nombre AS Nombre,
+        c.pago AS Pago,
+        c.retirado AS Retirado,
+        c.pago/2 AS Necesario_Retirar
     FROM capital c 
     JOIN informacion_general ig
     ON c.id = ig.id
     WHERE c.retirado < c.pago/2
     """
 
-    datos = pl.read_database(querry, conexion)
+    df = pl.read_database(querry, conexion)
     conexion.close()
 
-    return datos
+    return df
 
 
 def rectificar_numero(boleta_a_buscar: str) -> bool:
