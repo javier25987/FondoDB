@@ -1,10 +1,9 @@
 import sqlite3 as sql
-import polars as pl
+import pandas as pd
 
 
 def mostrar_transferencias_todo():
-    conexion = sql.connect("Fondo.db")
-    querry: str = """
+    query: str = """
     SELECT 
         t.id,
         ig.nombre,
@@ -15,10 +14,10 @@ def mostrar_transferencias_todo():
     ON t.id = ig.id 
     """
 
-    datos = pl.read_database(querry, conexion)
-    conexion.close()
+    with sql.connect("Fondo.db") as conexion:
+        df = pd.read_sql_query(query, conexion)
 
-    return datos
+    return df
 
 
 def obtener_usuarios() -> list[int]:
@@ -54,7 +53,7 @@ def mostrar_transferencias(index: int):
     WHERE t.id = {index}
     """
 
-    datos = pl.read_database(querry, conexion)
+    datos = pd.read_sql_query(querry, conexion)
     conexion.close()
 
     return datos

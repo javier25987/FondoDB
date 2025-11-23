@@ -3,7 +3,7 @@ import src.funciones.anotaciones as fa
 import src.msql as msql
 import streamlit as st
 import sqlite3 as sql
-import polars as pl
+import pandas as pd
 import datetime
 import time
 
@@ -217,7 +217,7 @@ def obtener_datos_usuario(index) -> dict[str, any]: # type: ignore
         "nombre": msql.obtener_valor("informacion_general", "nombre", index).title(),
         "telefono": msql.obtener_valor("informacion_general", "telefono", index),
         "puestos": msql.obtener_valor("informacion_general", "puestos", index),
-        "tabla1": pl.DataFrame(
+        "tabla1": pd.DataFrame(
             {
                 "cuota №": numeros[:25],
                 "fechas": calendario[:25],
@@ -226,7 +226,7 @@ def obtener_datos_usuario(index) -> dict[str, any]: # type: ignore
                 "multas pagas": multas_pagas[:25],
             }
         ),
-        "tabla2": pl.DataFrame(
+        "tabla2": pd.DataFrame(
             {
                 "cuota №": numeros[25:],
                 "fechas": calendario[25:],

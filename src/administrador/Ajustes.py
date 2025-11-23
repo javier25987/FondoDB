@@ -1,7 +1,7 @@
 import src.funciones.ajustes as fa
 import src.msql as msql
 import streamlit as st
-import polars as pl
+import pandas as pd
 import os
 
 st.title("Ajustes")
@@ -34,7 +34,7 @@ with tab[0]:
 
         st.markdown(f"##### Hora de cierre: {hora_de_corte}")
         st.table(
-            pl.DataFrame(
+            pd.DataFrame(
                 {
                     "1 ~ 10": calendario[:10],
                     "11 ~ 20": calendario[10:20],

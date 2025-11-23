@@ -3,7 +3,7 @@ import src.funciones.general as fg
 import src.msql as msql
 import streamlit as st
 import sqlite3 as sql
-import polars as pl
+import pandas as pd
 import datetime
 
 
@@ -102,18 +102,18 @@ def crear_tablas_de_prestamos(index: int):
         {
             "codigo": prestamo[0],
             "estado": "ACTIVO ⏳" if bool(prestamo[1]) else "PAGO ✅",
-            "tabla_interes": pl.DataFrame({
+            "tabla_interes": pd.DataFrame({
                 "Interes": [f"{prestamo[2]}%"],
                 "Intereses vencidos": [f"{prestamo[3]:,}"],
                 "Interes generado": [f"{prestamo[4]:,}"],
             }),
-            "tabla_deuda": pl.DataFrame({
+            "tabla_deuda": pd.DataFrame({
                 "Deuda": [f"{prestamo[5]:,}"],
                 "Monto": [f"{prestamo[6]:,}"],
                 "% Pago": [f"{int((1 - prestamo[5]/prestamo[6])*100)}%"],
             }),
-            "fechas": pl.DataFrame({"Fechas de pago": prestamo[7].split("_")}),
-            "tabla_fiadores": pl.DataFrame(
+            "fechas": pd.DataFrame({"Fechas de pago": prestamo[7].split("_")}),
+            "tabla_fiadores": pd.DataFrame(
                 {"Fiadores": prestamo[8].split("#"), "Deudas con fiadores": prestamo[9].split("#")}
             ),
             "deuda": prestamo[3] + prestamo[5],
@@ -144,7 +144,7 @@ def obtener_codigos(index: int) -> list[int]:
     return [i[0] for i in datos]
 
 
-def capital_disponible_mostrar(index: int) -> dict[str, int|str|pl.DataFrame]:
+def capital_disponible_mostrar(index: int) -> dict[str, int|str|pd.DataFrame]:
     capital: int = msql.obtener_valor("capital", "pago", index)
     capital_disponible: int = int(
         capital * msql.obtener_ajuste("capital usable") / 100
@@ -163,7 +163,7 @@ def capital_disponible_mostrar(index: int) -> dict[str, int|str|pl.DataFrame]:
     WHERE ph.idx = {index}
     """
 
-    df: pl.DataFrame = pl.read_database(query, conexion)
+    df: pd.DataFrame = pd.read_sql_query(query, conexion)
     conexion.close()
 
     total_interes: int = df["Interes"].sum()
@@ -564,7 +564,7 @@ def formulario_de_prestamo(
     st.subheader(f"Valor de el prestamo: {valor:,}")
 
     st.table(
-        pl.DataFrame({
+        pd.DataFrame({
             "Fiadores": fiadores,
             "Deudas con fiadores": list(map(lambda x: f"{x:,}", deudas_fiadores)),
         })

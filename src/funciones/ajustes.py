@@ -2,7 +2,7 @@ import src.funciones.prestamos as fp
 import src.funciones.general as fg
 import streamlit as st
 import sqlite3 as sql
-import polars as pl
+import pandas as pd
 import datetime
 import time
 
@@ -64,7 +64,7 @@ def obtener_tabla_rifas():
         dict_table["costos_de_administracion"].append(c_admis)
         dict_table["ganancia_por_boleta"].append(g_boleta)
 
-    return pl.DataFrame(dict_table)
+    return pd.DataFrame(dict_table)
 
 
 def cargar_datos_de_rifa(
@@ -132,7 +132,7 @@ def cerrar_una_rifa():
     # hacer todos los prestamos
 
     for idx, deuda in datos:
-        fp.escribir_prestamo(idx, deuda, [], [])
+        fp.escribir_prestamo(idx, deuda, "BOLETAS",[], [])
 
     # limpiar toda la tabla de `deudas_rifa`\
 

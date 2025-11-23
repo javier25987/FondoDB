@@ -37,6 +37,7 @@ paginas_generales: list = [
     st.Page("src/paginas/AnalisUsuarios.py", title="Analizar Ususarios", icon="📈"),
     st.Page("src/paginas/Transferencias.py", title="Transferencias", icon="🏛️"),
     st.Page("src/paginas/Rifas.py", title="Rifas", icon="🗒️"),
+    st.Page("src/paginas/Deudas.py", title="Deudas", icon="💲"),
     st.Page("src/paginas/Anotaciones.py", title="Anotaciones", icon="📘"),
     st.Page("src/paginas/VerSocios.py", title="Ver Usuarios", icon="🔎"),
     st.Page("src/paginas/Registros.py", title="Registros", icon="📚"),

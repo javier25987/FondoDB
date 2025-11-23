@@ -63,6 +63,5 @@ with cols[0]:
 
 with cols[1]:
     boletas_a_mostrar = fi.consultar_boletas_rifa(tabla_de_boletas)
-    if boletas_a_mostrar[1]:
-        st.table(boletas_a_mostrar[0])
+    st.table(boletas_a_mostrar)
 

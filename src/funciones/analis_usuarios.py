@@ -1,7 +1,7 @@
 import src.funciones.cuotas as fc
 import datetime
 import src.msql as msql
-import polars as pl
+import pandas as pd
 import sqlite3 as sql
 
 
@@ -49,7 +49,7 @@ def abrir_usuario(index: int) -> tuple[bool, str]:
     return True, ""
 
 
-def obtener_informacion_general(idx: int) -> pl.DataFrame:
+def obtener_informacion_general(idx: int) -> pd.DataFrame:
     conexion = sql.connect("Fondo.db")
     cursor = conexion.cursor()
 
@@ -100,4 +100,4 @@ def obtener_informacion_general(idx: int) -> pl.DataFrame:
 
     conexion.close()
 
-    return pl.DataFrame({"_ Total ..": nombres, "Valor": datos})
+    return pd.DataFrame({"_ Total ..": nombres, "Valor": datos})

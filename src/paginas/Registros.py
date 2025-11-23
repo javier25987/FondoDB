@@ -1,6 +1,6 @@
 import src.funciones.registros as fr
 import streamlit as st
-import polars as pl
+import pandas as pd
 
 st.title("Dinero ingresado y egresado por mes")
 
@@ -15,7 +15,7 @@ with cols[0]:
 
 with cols[1]:
     if st.session_state.mes_registro != 0:
-        chart_data = pl.DataFrame(fr.solicitar_registro(st.session_state.mes_registro))
+        chart_data = pd.DataFrame(fr.solicitar_registro(st.session_state.mes_registro))
         st.line_chart(chart_data, x="fechas")
     else:
         pass

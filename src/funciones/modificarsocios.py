@@ -4,7 +4,7 @@ import src.funciones.cuotas as fc
 import src.msql as msql
 import streamlit as st
 import sqlite3 as sql
-import polars as pl
+import pandas as pd
 import time
 
 
@@ -37,7 +37,7 @@ def menu_para_insertar_socio(
             st.rerun()
 
 
-def mostrar_usuarios() -> pl.DataFrame:
+def mostrar_usuarios() -> pd.DataFrame:
     conexion = sql.connect("Fondo.db")
     query: str = """
     SELECT 
@@ -48,7 +48,7 @@ def mostrar_usuarios() -> pl.DataFrame:
     FROM informacion_general ig
     ORDER BY ig.id DESC
     """
-    df: pl.DataFrame = pl.read_database(query, conexion)
+    df: pd.DataFrame = pd.read_sql_query(query, conexion)
 
     conexion.close()
     return df

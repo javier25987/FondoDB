@@ -1,8 +1,8 @@
 import sqlite3 as sql
-import polars as pl
+import pandas as pd
 
 
-def buscar_nombre(nombre: str) -> pl.DataFrame:
+def buscar_nombre(nombre: str) -> pd.DataFrame:
     conexion = sql.connect("Fondo.db")
     querry: str = f"""
         SELECT
@@ -13,13 +13,13 @@ def buscar_nombre(nombre: str) -> pl.DataFrame:
         From informacion_general ig
         WHERE ig.nombre LIKE '%{nombre}%'
     """
-    datos = pl.read_database(querry, conexion)
+    datos = pd.read_sql_query(querry, conexion)
     conexion.close()
 
     return datos # lambda x: "✅ activo" if bool(x) else "🚨 desactivado", datos[3])
 
 
-def tabla_acuerdo() -> pl.DataFrame:
+def tabla_acuerdo() -> pd.DataFrame:
     conexion = sql.connect("Fondo.db")
     querry: str = """
     SELECT
@@ -34,7 +34,7 @@ def tabla_acuerdo() -> pl.DataFrame:
     WHERE c.retirado < c.pago/2
     """
 
-    df = pl.read_database(querry, conexion)
+    df = pd.read_sql_query(querry, conexion)
     conexion.close()
 
     return df
@@ -47,7 +47,7 @@ def rectificar_numero(boleta_a_buscar: str) -> bool:
     return True
 
 
-def buscar_boleta(rifa_a_buscar: str, boleta_a_buscar: str) -> pl.DataFrame:
+def buscar_boleta(rifa_a_buscar: str, boleta_a_buscar: str) -> pd.DataFrame:
     conexion = sql.connect("Fondo.db")
 
     query: str = f"""
@@ -58,7 +58,7 @@ def buscar_boleta(rifa_a_buscar: str, boleta_a_buscar: str) -> pl.DataFrame:
         WHERE br.boleta LIKE '%{boleta_a_buscar}%'
     """
 
-    df: pl.DataFrame = pl.read_database(query, conexion)
+    df: pd.DataFrame = pd.read_sql_query(query, conexion)
     conexion.close()
 
     df.rename({
@@ -70,15 +70,18 @@ def buscar_boleta(rifa_a_buscar: str, boleta_a_buscar: str) -> pl.DataFrame:
     return df
 
 
-def mostrar_todas_boletas(rifa_a_buscar: str) -> pl.DataFrame:
-    query = f"SELECT ig.id, ig.nombre, br.boleta FROM {rifa_a_buscar} br JOIN informacion_general ig ON br.dada_a = ig.id"
+def mostrar_todas_boletas(rifa_a_buscar: str) -> pd.DataFrame:
+    query = f"""
+    SELECT 
+        ig.id AS ID,
+        ig.nombre AS Nombre,
+        br.boleta AS Boleta
+    FROM {rifa_a_buscar} br 
+    JOIN informacion_general ig 
+    ON br.dada_a = ig.id
+    """
     
     with sql.connect("Fondo.db") as conexion:
-        df = pl.read_database(query, conexion)
+        df = pd.read_sql_query(query, conexion)
 
-    if df.is_empty():
-        return pl.DataFrame()
-    
-    # Renombrar columnas si quieres mantener nombres personalizados
-    df.columns = ["Puesto", "Nombre", "Boleta"]
     return df
