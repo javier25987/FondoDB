@@ -46,7 +46,7 @@ def realizar_anotacion(index: int, anotacion: str, monto: int, motivo: str) -> N
     fecha: str = datetime.datetime.now().strftime('%Y/%m/%d %H:%M')
 
     if motivo == "MONETARIA":
-        anotacion += f". $ {monto}"
+        anotacion += f". $ {monto:,}"
 
     motivo_cargar: str = motivo[0].upper()
 
