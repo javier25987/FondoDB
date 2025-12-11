@@ -60,13 +60,13 @@ for deuda in fd.obtener_deudas_usr(index):
 
 
     with cols[1]:
-        st.markdown(f"**Motivo:** \n >{deuda["motivo"]}")
+        st.markdown(f"**Motivo:** {deuda["motivo"]}")
 
         if deuda["is_multa"]:
-            st.badge("Esta deuda aporta a multas", icon="ℹ️")
+            st.info("Esta deuda aporta a multas", icon="ℹ️")
 
         if deuda["estado"]:
-            st.badge("Deuda Paga", icon=":material/check:", color="green")
+            st.success("Deuda Paga", icon=":material/check:")
 
     if not deuda["estado"]:
         if st.button(f"Pagar {deuda["codigo"]}"):
